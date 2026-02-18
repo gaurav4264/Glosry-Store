@@ -1,0 +1,31 @@
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leaf_grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#16a34a" />
+    </linearGradient>
+    <filter id="shadow" x="-2" y="-2" width="120%" height="120%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Branded Icon (Leaf + Cart Hybrid) -->
+  <g filter="url(#shadow)">
+    <!-- Cart Base / Leaf Bottom -->
+    <path d="M10 32C10 32 12 38 20 38C28 38 30 32 30 32L34 18H6L10 32Z" fill="url(#leaf_grad)"/>
+    <!-- Sprout / Handle -->
+    <path d="M20 18V10C20 10 21 6 25 6" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/>
+    <path d="M20 12C20 12 16 8 12 10" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Wheels -->
+    <circle cx="15" cy="42" r="2.5" fill="#374151"/>
+    <circle cx="25" cy="42" r="2.5" fill="#374151"/>
+  </g>
+
+  <!-- SabziKart Typography -->
+  <text x="45" y="34" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="900" font-size="28" letter-spacing="-0.04em">
+    <tspan fill="#16a34a">Sabzi</tspan><tspan fill="#111827">Kart</tspan>
+  </text>
+  
+  <!-- Subtle Tagline or Accent -->
+  <path d="M45 40H185" stroke="#e5e7eb" stroke-width="1" stroke-linecap="round"/>
+</svg>
