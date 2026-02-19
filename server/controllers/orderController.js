@@ -3,6 +3,7 @@ import Product from "../models/Product.js";
 import stripe from "stripe"
 import User from "../models/User.js"
 import Coupon from "../models/Coupon.js"
+import { v2 as cloudinary } from 'cloudinary'
 
 // Helper: Calculate membership tier
 const calculateTier = (totalSpent) => {
@@ -263,7 +264,10 @@ export const getUserOrders = async (req, res) => {
         const orders = await Order.find({
             userId,
             $or: [{ paymentType: "COD" }, { isPaid: true }]
-        }).populate("items.product address").sort({ createdAt: -1 });
+        }).populate({
+            path: "items.product",
+            populate: { path: "shopId", select: "name _id" }
+        }).populate("address").sort({ createdAt: -1 });
         res.json({ success: true, orders });
     } catch (error) {
         res.json({ success: false, message: error.message });
@@ -466,10 +470,23 @@ export const cancelOrder = async (req, res) => {
     }
 }
 
+import fs from 'fs';
+
 // Return Order : /api/order/return
 export const returnOrder = async (req, res) => {
     try {
+        const logData = `
+--------------------------------------------------
+Time: ${new Date().toISOString()}
+Headers: ${JSON.stringify(req.headers)}
+Body: ${JSON.stringify(req.body)}
+Files: ${req.files ? req.files.map(f => f.originalname).join(', ') : 'No files'}
+--------------------------------------------------
+`;
+        fs.appendFileSync('request_debug.log', logData);
+
         const { userId, orderId, reason } = req.body;
+        const imageFiles = req.files;
 
         const order = await Order.findById(orderId);
         if (!order) {
@@ -493,15 +510,28 @@ export const returnOrder = async (req, res) => {
             return res.json({ success: false, message: "Return window (7 days) has expired" });
         }
 
+        // Upload images to Cloudinary
+        const returnImagesArr = [];
+        if (imageFiles && imageFiles.length > 0) {
+            for (const file of imageFiles) {
+                const result = await cloudinary.uploader.upload(file.path, { resource_type: 'image' });
+                returnImagesArr.push(result.secure_url);
+            }
+        }
+
+        // Update Order
         order.status = 'Return Requested';
-        order.returnRequestedAt = new Date();
-        order.returnReason = reason || 'No reason provided';
         order.returnStatus = 'Pending';
+        order.returnReason = reason;
+        order.returnImages = returnImagesArr;
+        order.returnRequestedAt = new Date();
         order.statusHistory.push({ status: 'Return Requested', timestamp: new Date() });
+
         await order.save();
 
         return res.json({ success: true, message: "Return request submitted successfully" });
     } catch (error) {
+        console.error("Return Order Error:", error);
         return res.json({ success: false, message: error.message });
     }
 }

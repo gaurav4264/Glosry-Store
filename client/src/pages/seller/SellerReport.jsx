@@ -91,6 +91,7 @@ const SellerReport = () => {
                             <option value="Pending">Pending</option>
                             <option value="Delivered">Delivered</option>
                             <option value="Cancelled">Cancelled</option>
+                            <option value="Returned">Returned</option>
                         </select>
                     </div>
 
@@ -145,7 +146,7 @@ const SellerReport = () => {
             </div>
 
             {/* Overview Cards (Filtered) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                 <div className="bg-white p-4 rounded-xl shadow border border-gray-100">
                     <p className="text-gray-500 text-xs font-medium uppercase">Total Orders</p>
                     <h3 className="text-2xl font-bold text-gray-800">{overview?.totalOrders || 0}</h3>
@@ -174,12 +175,22 @@ const SellerReport = () => {
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow border border-gray-100">
-                    <p className="text-gray-500 text-xs font-medium uppercase">Cancelled/Returned</p>
-                    <h3 className="text-2xl font-bold text-red-500">{(overview?.cancelled || 0) + (overview?.returned || 0)}</h3>
+                    <p className="text-gray-500 text-xs font-medium uppercase">Cancelled</p>
+                    <h3 className="text-2xl font-bold text-red-500">{overview?.cancelled || 0}</h3>
                     <div className="h-1 w-full bg-gray-100 mt-2 rounded-full overflow-hidden">
                         <div
                             className="h-full bg-red-500 transition-all duration-500"
-                            style={{ width: `${overview?.totalOrders ? ((overview.cancelled + overview.returned) / overview.totalOrders) * 100 : 0}%` }}
+                            style={{ width: `${overview?.totalOrders ? (overview.cancelled / overview.totalOrders) * 100 : 0}%` }}
+                        />
+                    </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow border border-gray-100">
+                    <p className="text-gray-500 text-xs font-medium uppercase">Returned</p>
+                    <h3 className="text-2xl font-bold text-purple-500">{overview?.returned || 0}</h3>
+                    <div className="h-1 w-full bg-gray-100 mt-2 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-purple-500 transition-all duration-500"
+                            style={{ width: `${overview?.totalOrders ? (overview.returned / overview.totalOrders) * 100 : 0}%` }}
                         />
                     </div>
                 </div>

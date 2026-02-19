@@ -14,6 +14,8 @@ const MyOrders = () => {
     const [showReturnModal, setShowReturnModal] = useState(false)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [reason, setReason] = useState('')
+    const [customReason, setCustomReason] = useState('')
+    const [returnImages, setReturnImages] = useState([])
 
     const fetchMyOrders = async () => {
         try {
@@ -27,13 +29,16 @@ const MyOrders = () => {
     }
 
     const handleCancelOrder = async () => {
-        if (!reason) return toast.error("Please provide a reason")
+        const finalReason = reason === 'Other' ? customReason : reason;
+        if (!finalReason) return toast.error("Please provide a reason")
+
         try {
-            const { data } = await axios.post('/api/order/cancel', { orderId: selectedOrder._id, reason })
+            const { data } = await axios.post('/api/order/cancel', { orderId: selectedOrder._id, reason: finalReason })
             if (data.success) {
                 toast.success(data.message)
                 setShowCancelModal(false)
                 setReason('')
+                setCustomReason('')
                 fetchMyOrders()
             } else {
                 toast.error(data.message)
@@ -43,20 +48,64 @@ const MyOrders = () => {
         }
     }
 
+    const [isReturnSubmitting, setIsReturnSubmitting] = useState(false)
+
     const handleReturnOrder = async () => {
-        if (!reason) return toast.error("Please provide a reason for return")
+        const finalReason = reason === 'Other' ? customReason : reason;
+        if (!finalReason) return toast.error("Please provide a reason for return")
+
+        setIsReturnSubmitting(true);
         try {
-            const { data } = await axios.post('/api/order/return', { orderId: selectedOrder._id, reason })
+            const formData = new FormData();
+            formData.append('orderId', selectedOrder._id);
+            formData.append('reason', finalReason);
+            formData.append('userId', user._id);
+
+            returnImages.forEach((image) => {
+                formData.append('images', image);
+            });
+
+            const { data } = await axios.post('/api/order/return', formData)
             if (data.success) {
                 toast.success(data.message)
                 setShowReturnModal(false)
                 setReason('')
+                setReturnImages([])
                 fetchMyOrders()
             } else {
                 toast.error(data.message)
             }
         } catch (error) {
             toast.error(error.message)
+        } finally {
+            setIsReturnSubmitting(false);
+        }
+    }
+
+    // Helper to handle image selection
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length + returnImages.length > 2) {
+            toast.error("You can only upload a maximum of 2 images.");
+            return;
+        }
+        setReturnImages(prev => [...prev, ...files].slice(0, 2));
+    }
+
+    // Helper for sharing
+    const handleShare = (order) => {
+        const text = `Check out my order from ${order.items[0]?.product?.shopId?.name || 'Glosry Shop'}! Total: ${currency}${order.amount}`;
+        const url = window.location.href; // Or specific order link if available
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'My Order',
+                text: text,
+                url: url,
+            }).catch(console.error);
+        } else {
+            // Fallback to WhatsApp
+            window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
         }
     }
 
@@ -103,7 +152,13 @@ const MyOrders = () => {
                                 </div>
                             </div>
                             <div className='flex gap-2'>
-                                {order.status === 'Delivered' && (
+                                <button
+                                    onClick={() => handleShare(order)}
+                                    className='text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition font-medium flex items-center gap-1'
+                                >
+                                    📤 Share
+                                </button>
+                                {['Delivered', 'Return Requested', 'Returned'].includes(order.status) && (
                                     <button
                                         onClick={() => generateInvoice(order, currency)}
                                         className='text-xs bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition flex items-center gap-1.5 font-medium'
@@ -175,6 +230,11 @@ const MyOrders = () => {
                                         <div className='flex-1'>
                                             <h3 className='font-bold text-gray-800'>{item.product?.name || "Product Unavailable"}</h3>
                                             <p className='text-sm text-gray-500'>Qty: {item.quantity} • {item.product?.category}</p>
+                                            {item.product?.shopId && (
+                                                <p onClick={() => window.location.href = `/shop/${item.product.shopId._id}`} className='text-xs text-primary mt-1 cursor-pointer hover:underline'>
+                                                    Sold by: {item.product.shopId.name}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className='text-right'>
                                             <p className='font-bold text-gray-700'>{currency}{item.product?.offerPrice * item.quantity || "0"}</p>
@@ -210,7 +270,7 @@ const MyOrders = () => {
                         <select
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
-                            className='w-full p-2 border border-gray-300 rounded-lg mb-6 outline-none focus:border-primary'
+                            className='w-full p-2 border border-gray-300 rounded-lg mb-4 outline-none focus:border-primary'
                         >
                             <option value="">Select Reason</option>
                             <option value="Changed my mind">Changed my mind</option>
@@ -219,7 +279,15 @@ const MyOrders = () => {
                             <option value="Found better price elsewhere">Found better price elsewhere</option>
                             <option value="Other">Other</option>
                         </select>
-                        <div className='flex gap-3'>
+                        {reason === 'Other' && (
+                            <textarea
+                                value={customReason}
+                                onChange={(e) => setCustomReason(e.target.value)}
+                                placeholder="Please specify your reason..."
+                                className='w-full p-3 border border-gray-300 rounded-lg mb-6 h-20 outline-none focus:border-primary resize-none'
+                            />
+                        )}
+                        <div className='flex gap-3 mt-2'>
                             <button onClick={() => setShowCancelModal(false)} className='flex-1 py-2 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition'>Back</button>
                             <button onClick={handleCancelOrder} className='flex-1 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition'>Confirm Cancel</button>
                         </div>
@@ -233,15 +301,57 @@ const MyOrders = () => {
                     <div className='bg-white rounded-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200'>
                         <h2 className='text-xl font-bold mb-4'>Return Items</h2>
                         <p className='text-gray-500 text-sm mb-4'>Why are you returning these items?</p>
-                        <textarea
+
+                        <select
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
-                            placeholder="Reason for return (e.g., Damage, Not fresh, Wrong item)..."
-                            className='w-full p-3 border border-gray-300 rounded-lg mb-6 h-28 outline-none focus:border-primary resize-none'
-                        />
+                            className='w-full p-2 border border-gray-300 rounded-lg mb-4 outline-none focus:border-primary'
+                        >
+                            <option value="">Select Reason</option>
+                            <option value="Damaged Product">Damaged Product</option>
+                            <option value="Expired Product">Expired Product</option>
+                            <option value="Wrong Item Received">Wrong Item Received</option>
+                            <option value="Quality Issue">Quality Issue</option>
+                            <option value="Other">Other</option>
+                        </select>
+
+                        {reason === 'Other' && (
+                            <textarea
+                                value={customReason}
+                                onChange={(e) => setCustomReason(e.target.value)}
+                                placeholder="Please specify your reason..."
+                                className='w-full p-3 border border-gray-300 rounded-lg mb-4 h-20 outline-none focus:border-primary resize-none'
+                            />
+                        )}
+
+                        <div className="mb-6">
+                            <p className="text-sm font-medium mb-2">Upload Evidence (Max 2 images)</p>
+                            <div className="flex gap-2 mb-2">
+                                {returnImages.map((img, idx) => (
+                                    <div key={idx} className="relative w-16 h-16 border rounded overflow-hidden">
+                                        <img src={URL.createObjectURL(img)} alt="preview" className="w-full h-full object-cover" />
+                                        <button
+                                            onClick={() => setReturnImages(prev => prev.filter((_, i) => i !== idx))}
+                                            className="absolute top-0 right-0 bg-red-500 text-white w-4 h-4 flex items-center justify-center text-[10px] rounded-full"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                                {returnImages.length < 2 && (
+                                    <label className="w-16 h-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer text-gray-400 hover:border-primary hover:text-primary transition">
+                                        +
+                                        <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+
                         <div className='flex gap-3'>
                             <button onClick={() => setShowReturnModal(false)} className='flex-1 py-2 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition'>Back</button>
-                            <button onClick={handleReturnOrder} className='flex-1 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition'>Submit Request</button>
+                            <button disabled={isReturnSubmitting} onClick={handleReturnOrder} className='flex-1 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed'>
+                                {isReturnSubmitting ? 'Submitting...' : 'Submit Request'}
+                            </button>
                         </div>
                     </div>
                 </div>

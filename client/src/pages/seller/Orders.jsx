@@ -220,8 +220,34 @@ const Orders = () => {
                                     <option value="Shipped">Shipped</option>
                                     <option value="Out for Delivery">Out for Delivery</option>
                                     <option value="Delivered">Delivered</option>
+                                    <option value="Return Requested">Return Requested</option>
+                                    <option value="Returned">Returned</option>
                                     <option value="Cancelled">Cancelled</option>
                                 </select>
+
+                                {order.status === 'Cancelled' && (
+                                    <div className='mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-600'>
+                                        <p className='font-medium'>Cancellation Reason:</p>
+                                        <p>{order.cancellationReason || "No reason provided"}</p>
+                                    </div>
+                                )}
+
+                                {['Return Requested', 'Returned'].includes(order.status) && (
+                                    <div className='mt-2 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-600 max-w-[250px]'>
+                                        <p className='font-medium'>Return Reason:</p>
+                                        <p className='mb-2'>{order.returnReason || "No reason provided"}</p>
+
+                                        {order.returnImages && order.returnImages.length > 0 && (
+                                            <div className='flex gap-2 flex-wrap'>
+                                                {order.returnImages.map((img, idx) => (
+                                                    <a key={idx} href={img} target="_blank" rel="noreferrer" className='block w-12 h-12 border border-gray-300 rounded overflow-hidden hover:opacity-80'>
+                                                        <img src={img} alt="Return Evidence" className='w-full h-full object-cover' />
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))

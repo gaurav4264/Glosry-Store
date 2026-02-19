@@ -1,14 +1,26 @@
 import React from 'react'
 
-const steps = [
-    { key: 'Order Placed', label: 'Order Placed', icon: '📦' },
-    { key: 'Packing', label: 'Packing', icon: '📋' },
-    { key: 'Shipped', label: 'Shipped', icon: '🚚' },
-    { key: 'Out for Delivery', label: 'Out for Delivery', icon: '🏍️' },
-    { key: 'Delivered', label: 'Delivered', icon: '✅' },
-]
-
 const OrderTimeline = ({ status }) => {
+    let steps = [
+        { key: 'Order Placed', label: 'Order Placed', icon: '📦' },
+        { key: 'Packing', label: 'Packing', icon: '📋' },
+        { key: 'Shipped', label: 'Shipped', icon: '🚚' },
+        { key: 'Out for Delivery', label: 'Out for Delivery', icon: '🏍️' },
+        { key: 'Delivered', label: 'Delivered', icon: '✅' },
+    ]
+
+    if (status === 'Cancelled') {
+        steps = [
+            { key: 'Order Placed', label: 'Order Placed', icon: '📦' },
+            { key: 'Cancelled', label: 'Cancelled', icon: '❌' },
+        ]
+    } else if (['Return Requested', 'Returned'].includes(status)) {
+        steps.push(
+            { key: 'Return Requested', label: 'Return Req.', icon: '↩️' },
+            { key: 'Returned', label: 'Returned', icon: '💰' }
+        )
+    }
+
     const currentIndex = steps.findIndex(s => s.key === status)
     const progress = currentIndex >= 0 ? currentIndex : 0
 

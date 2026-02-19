@@ -17,6 +17,7 @@ const orderSchema = new mongoose.Schema({
     cancellationReason: { type: String, default: null },
     returnRequestedAt: { type: Date, default: null },
     returnReason: { type: String, default: null },
+    returnImages: { type: [String], default: [] },
     returnStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Completed'], default: null },
     scheduledDeliveryDate: { type: Date, default: null },
     deliveryTimeSlot: { type: String, enum: ['Morning (9AM-12PM)', 'Afternoon (12PM-4PM)', 'Evening (4PM-8PM)'], default: null },

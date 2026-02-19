@@ -1,0 +1,28 @@
+
+--------------------------------------------------
+Time: 2026-02-19T06:49:22.480Z
+Headers: {"host":"localhost:4000","connection":"keep-alive","content-length":"387","sec-ch-ua-platform":"\"Windows\"","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0","accept":"application/json, text/plain, */*","sec-ch-ua":"\"Not:A-Brand\";v=\"99\", \"Microsoft Edge\";v=\"145\", \"Chromium\";v=\"145\"","content-type":"multipart/form-data; boundary=----WebKitFormBoundaryx7w5Lfe85cW7WzKX","sec-ch-ua-mobile":"?0","origin":"http://localhost:5173","sec-fetch-site":"same-site","sec-fetch-mode":"cors","sec-fetch-dest":"empty","referer":"http://localhost:5173/","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9,en-IN;q=0.8","cookie":"sellerToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiaWF0IjoxNzcwOTU4MDIwLCJleHAiOjE3NzE1NjI4MjB9.r5rSCe-HOMD0ptFer4kgLfpcWCMk2m39A18YpWR6VPY; token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OGVhYzllYWRlNjhkYWVkZTc2MWZjMCIsImlhdCI6MTc3MTE0NTUwMCwiZXhwIjoxNzcxNzUwMzAwfQ.4p-gyENWF8GE_qt_5mPCapZ-6SKMFldkoVuTuFzpBuM"}
+Body: {"userId":"698eac9eade68daede761fc0"}
+Files: No files
+--------------------------------------------------
+
+--------------------------------------------------
+Time: 2026-02-19T16:34:16.439Z
+Headers: {"host":"localhost:4000","connection":"keep-alive","content-length":"67830","sec-ch-ua-platform":"\"Windows\"","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0","accept":"application/json, text/plain, */*","sec-ch-ua":"\"Not:A-Brand\";v=\"99\", \"Microsoft Edge\";v=\"145\", \"Chromium\";v=\"145\"","content-type":"multipart/form-data; boundary=----WebKitFormBoundaryP64BbJuk2JdPaJKy","sec-ch-ua-mobile":"?0","origin":"http://localhost:5173","sec-fetch-site":"same-site","sec-fetch-mode":"cors","sec-fetch-dest":"empty","referer":"http://localhost:5173/","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9,en-IN;q=0.8","cookie":"sellerToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiaWF0IjoxNzcwOTU4MDIwLCJleHAiOjE3NzE1NjI4MjB9.r5rSCe-HOMD0ptFer4kgLfpcWCMk2m39A18YpWR6VPY; token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OGVhYzllYWRlNjhkYWVkZTc2MWZjMCIsImlhdCI6MTc3MTE0NTUwMCwiZXhwIjoxNzcxNzUwMzAwfQ.4p-gyENWF8GE_qt_5mPCapZ-6SKMFldkoVuTuFzpBuM"}
+Body: {"userId":"698eac9eade68daede761fc0"}
+Files: No files
+--------------------------------------------------
+
+--------------------------------------------------
+Time: 2026-02-19T16:34:34.559Z
+Headers: {"host":"localhost:4000","connection":"keep-alive","content-length":"67830","sec-ch-ua-platform":"\"Windows\"","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0","accept":"application/json, text/plain, */*","sec-ch-ua":"\"Not:A-Brand\";v=\"99\", \"Microsoft Edge\";v=\"145\", \"Chromium\";v=\"145\"","content-type":"multipart/form-data; boundary=----WebKitFormBoundaryhjYL0FYFxwwJ3QXu","sec-ch-ua-mobile":"?0","origin":"http://localhost:5173","sec-fetch-site":"same-site","sec-fetch-mode":"cors","sec-fetch-dest":"empty","referer":"http://localhost:5173/","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9,en-IN;q=0.8","cookie":"sellerToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiaWF0IjoxNzcwOTU4MDIwLCJleHAiOjE3NzE1NjI4MjB9.r5rSCe-HOMD0ptFer4kgLfpcWCMk2m39A18YpWR6VPY; token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OGVhYzllYWRlNjhkYWVkZTc2MWZjMCIsImlhdCI6MTc3MTE0NTUwMCwiZXhwIjoxNzcxNzUwMzAwfQ.4p-gyENWF8GE_qt_5mPCapZ-6SKMFldkoVuTuFzpBuM"}
+Body: {"userId":"698eac9eade68daede761fc0"}
+Files: No files
+--------------------------------------------------
+
+--------------------------------------------------
+Time: 2026-02-19T16:39:32.126Z
+Headers: {"host":"localhost:4000","connection":"keep-alive","content-length":"78701","sec-ch-ua-platform":"\"Windows\"","user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0","accept":"application/json, text/plain, */*","sec-ch-ua":"\"Not:A-Brand\";v=\"99\", \"Microsoft Edge\";v=\"145\", \"Chromium\";v=\"145\"","content-type":"multipart/form-data; boundary=----WebKitFormBoundaryroIAtoBS4XiHB39O","sec-ch-ua-mobile":"?0","origin":"http://localhost:5173","sec-fetch-site":"same-site","sec-fetch-mode":"cors","sec-fetch-dest":"empty","referer":"http://localhost:5173/","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9,en-IN;q=0.8","cookie":"sellerToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiaWF0IjoxNzcwOTU4MDIwLCJleHAiOjE3NzE1NjI4MjB9.r5rSCe-HOMD0ptFer4kgLfpcWCMk2m39A18YpWR6VPY; token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OGVhYzllYWRlNjhkYWVkZTc2MWZjMCIsImlhdCI6MTc3MTE0NTUwMCwiZXhwIjoxNzcxNzUwMzAwfQ.4p-gyENWF8GE_qt_5mPCapZ-6SKMFldkoVuTuFzpBuM"}
+Body: {"orderId":"69973b5380224810b3e1111d","reason":"Damaged Product","userId":"698eac9eade68daede761fc0"}
+Files: amul_milk_image.png
+--------------------------------------------------
