@@ -8,11 +8,13 @@ import { categories as assetCategories } from '../assets/assets'
 const ChatBot = () => {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState([
-        { type: 'bot', text: '👋 नमस्ते! मैं Gaurav Grocery का AI Assistant हूँ। Product search karein, category par jaayein, ya koi complaint karein!', time: new Date() }
+        { type: 'bot', text: '👋 Namaste! Main **SabziKart AI** hoon! 🤖\n\nKoi bhi sawaal poocho — grocery, general knowledge, jokes, recipes, ya kuch bhi! 😊\n\n🌍 **Language change** kar sakte ho header mein: Hindi / English / Hinglish', time: new Date() }
     ])
     const [input, setInput] = useState('')
     const [isTyping, setIsTyping] = useState(false)
-    const [complaintMode, setComplaintMode] = useState(false) // New state for complaint flow
+    const [complaintMode, setComplaintMode] = useState(false)
+    const [language, setLanguage] = useState('hinglish') // 'hindi' | 'english' | 'hinglish'
+    const [chatTab, setChatTab] = useState('chat') // 'chat' | 'categories'
     const messagesEndRef = useRef(null)
     const { products, currency, user, token } = useAppContext() // Added user/token for complaint
     const navigate = useNavigate()
@@ -27,12 +29,14 @@ const ChatBot = () => {
 
     // Quick suggestion buttons
     const suggestions = [
+        '😊 How are you?',
         '🔍 Show all categories',
         '🍎 Go to Fruits',
-        '📝 Register Complaint', // Added
+        '📝 Register Complaint',
         '🏷️ Cheapest products',
         '⭐ Top rated products',
-        '📦 Track my order'
+        '📦 Track my order',
+        '😂 Tell me a joke',
     ]
 
     const handleOptionClick = (opt) => {
@@ -70,7 +74,7 @@ const ChatBot = () => {
         }
     }
 
-    const processMessage = async (userMsg) => {
+    const processMessage = async (userMsg, conversationRef = []) => {
         const msg = userMsg.toLowerCase().trim()
 
         // Helper to return format
@@ -311,13 +315,130 @@ const ChatBot = () => {
         }
 
         // --- THANK YOU ---
-        if (msg.match(/(thank|thanks|shukriya|dhanyavaad)/)) {
-            return response('🙏 Aapka shukriya! Agar koi aur sawal ho toh zaroor poochein. Happy shopping! 🛒✨')
+        if (msg.match(/(thank|thanks|shukriya|dhanyavaad|ty|thnx|thx)/)) {
+            const thankReplies = [
+                '🙏 Aapka bahut bahut shukriya! Aur kuch poochna hai? Main hamesha ready hoon! 😊',
+                '💚 Thank you bhi aapko! Happy shopping karein! 🛒✨',
+                '🌟 Aapka welcome hai! Koi aur sawaal ho toh zaroor batayein.',
+            ]
+            return response(thankReplies[Math.floor(Math.random() * thankReplies.length)])
         }
 
         // --- BYE ---
-        if (msg.match(/(bye|goodbye|alvida|ok)/)) {
-            return response('👋 Alvida! Phir se aayein. Gaurav Grocery Store mein aapka swagat hai! 🙏')
+        if (msg.match(/(bye|goodbye|alvida|ok bye|tata|ttyl|see you)/)) {
+            const byeReplies = [
+                '👋 Alvida! Jaldi wapas aana, hum wait karenge! 🙏',
+                '😊 Bye bye! Happy shopping! Gaurav Grocery mein aapka swagat hai! 🛒',
+                '💚 Take care! Phir milenge! 👋✨'
+            ]
+            return response(byeReplies[Math.floor(Math.random() * byeReplies.length)])
+        }
+
+        // =============================================
+        // ====  CASUAL / RANDOM CHAT SECTION  =========
+        // =============================================
+
+        // --- HOW ARE YOU ---
+        if (msg.match(/(how are (you|use|u|ypu|yuo|yo|yoo)|kaise ho|kaisa hai|kaisi ho|how r u|hru|kya haal|kya hal|how's it going|what's up|wassup|sup|how r you|hows u)/)) {
+            const replies = [
+                '😊 Main bilkul theek hoon, shukriya poochne ke liye! Aap kaise hain? Aaj kuch khaas grocery chahiye?',
+                '🤖 Main toh ek AI hoon, lekin aapki help karna mujhe bahut khushi deta hai! Aap sunao, kya chal raha hai? 😄',
+                '💚 Ekdum fit aur fine! Aap batao, aaj kya grocery chahiye? Main ready hoon help ke liye! 🛒',
+                '🌟 Bahut badiya! Din acha ja raha hai jab aap jaisa customer aata hai! Kya seva karoon? 😊'
+            ]
+            return response(replies[Math.floor(Math.random() * replies.length)])
+        }
+
+        // --- WHAT IS YOUR NAME ---
+        if (msg.match(/(your name|aapka naam|tumhara naam|what are you|who are you|kaun ho|kya naam|tum kaun|apna naam)/)) {
+            return response(
+                '🤖 **Mera Naam: SabziKart AI** 🥬\n\nMain **Gaurav Grocery Store** ka official AI assistant hoon!\n\nMujhe banaya gaya hai aapki shopping experience ko aasaan aur enjoyable banane ke liye.\n\nAap mujhse grocery search, price check, order track, ya seedha baat bhi kar sakte hain! 😊',
+                [{ label: '🔍 Product Search karein', action: 'suggest', text: 'Show all categories' }]
+            )
+        }
+
+        // --- JOKES ---
+        if (msg.match(/(joke|jokes|funny|hasao|mazak|chutkula|comedy|haha|lol|😂)/)) {
+            const jokes = [
+                '😂 Ek banda vegetable market gaya aur bola: "Bhaiya ek kilo tamatar do"\n\nDukaandar: "Sir, tamatar 80 rupaye kg hai"\n\nBanda: "Theek hai, to ek kilo 40 rupaye wala paani de do!" 🍅😂',
+                '🥬 Q: Sabzi kyu roti hai?\n\nA: Kyunki usko "chop" kiya jaata hai! 😂🔪',
+                '🍌 Q: Kela English mein kya hota hai?\n\nA: Banana!\n\nBanda: Okay okay, "kuch bhi" English mein kya hai? 😂',
+                '🛒 Ek banda grocery store mein gaya aur cashier se bola: "Bhaiya, aapke paas organic vegetables hain?"\n\nCashier: "Haan sir!"\n\nBanda: "Aur inorganic?"\n\nCashier: "Sir, ye market hai, chemistry lab nahi!" 😂🧪',
+                '🥦 Q: Broccoli ne kya kaha jab wo famous hua?\n\nA: "Main finally TREE-mendous hoon!" 🌳😂'
+            ]
+            return response(jokes[Math.floor(Math.random() * jokes.length)] + '\n\nAur joke chahiye? Ya kuch aur help karoon? 😄')
+        }
+
+        // --- AGE / BIRTHDAY ---
+        if (msg.match(/(how old|umar|age|birthday|janam din|born)/)) {
+            return response('🤖 Main ek AI hoon, toh technically mere paas age nahi hai! Lekin SabziKart store bahut purana aur trusted hai. 😄\n\nAur aapki age? Main hopes kar raha hoon ki aap shopping ke liye kaafi bade hain! 🛒😂')
+        }
+
+        // --- WEATHER ---
+        if (msg.match(/(weather|mausam|baarish|rain|summer|garmi|sardi|winter|temp|temperature)/)) {
+            return response('🌤️ Main toh ek grocery AI hoon - mujhe weather ki koi jaankari nahi! 😅\n\nLekin... agar garmi hai toh **fresh juices** aur **cold drinks** ke liye ingredients check karein! ❄️\n\nAur baarish ke liye **garam chai** wali saamagri! ☕',
+                [{ label: '🛒 Products dekhein', action: 'navigate', path: '/products' }])
+        }
+
+        // --- COMPLIMENT TO BOT ---
+        if (msg.match(/(you are (good|great|awesome|amazing|best|nice)|bahut (accha|acha|badhiya|sahi)|you're (good|great|cool)|smart ai|genius)/)) {
+            const complimentReplies = [
+                '😊 Shukriya! Aapki taareef sun ke mujhe khushi hoti hai! Aap bhi bahut sahi lag rahe ho! 💚',
+                '🌟 Aaww! Thank you! Main aapki help karne mein hamesha best deta hoon! Shopping karते rahein! 🛒',
+                '😄 Iske liye dhanyavaad! Ab main aur bhi zyada helpful banne ki koshish karunga! Kya help chahiye?'
+            ]
+            return response(complimentReplies[Math.floor(Math.random() * complimentReplies.length)])
+        }
+
+        // --- BOREDOM ---
+        if (msg.match(/(bored|bore|bore ho|kya karun|time pass|timepass|kuch nahi|nothing to do|bakwas karo)/)) {
+            return response(
+                '😄 Arre boredom? Main hoon na! Let\'s chat!\n\n🎯 **Mujhse ye sab pooch sakte ho:**\n• 😂 "Tell me a joke" - chutkule sunao\n• 🌟 "Tell me a fun fact" - interesting baatein\n• 🛍️ "Best deals" - aaj ki best offers\n• 🌈 "Motivate me" - thodi motivation\n\nOr bas baat karo, main yahan hoon! 💬',
+                [
+                    { label: '😂 Joke sunao', action: 'suggest', text: 'Tell me a joke' },
+                    { label: '🌟 Fun fact', action: 'suggest', text: 'Tell me a fun fact' },
+                    { label: '💪 Motivate me', action: 'suggest', text: 'Motivate me' }
+                ]
+            )
+        }
+
+        // --- FUN FACTS ---
+        if (msg.match(/(fun fact|interesting|did you know|fact|amazing fact|acchi baat|kuch naya)/)) {
+            const facts = [
+                '🍅 **Fun Fact:** Technically tomato ek fruit hai, vegetable nahi! Botanically speaking, jo cheez seeds contain kare wo fruit hoti hai. 🤯',
+                '🥕 **Did you know?** Gajar (Carrot) originally purple aur yellow colour ki hoti thi! Orange carrots 17th century mein Netherlands mein develop ki gayi thi! 🇳🇱',
+                '🧅 **Interesting:** Onion kaatne par aansu isliye aate hain kyunki ismein sul-fur compounds hote hain jo air mein release hote hain! 😭🧅',
+                '🥦 **Fun Fact:** Broccoli ka naam Italian word "broccolo" se aaya hai, jiska matlab hai "flowering crest of a cabbage"! 🌸',
+                '🍋 **Amazing:** Lemon mein sugar se zyada sugar hoti hai! Lekin uska acidic taste sugar ko chhupa deta hai. 🍋😮'
+            ]
+            return response(facts[Math.floor(Math.random() * facts.length)] + '\n\nAur poochna? Ya grocery shopping karein? 😊')
+        }
+
+        // --- MOTIVATION ---
+        if (msg.match(/(motivate|motivation|inspire|sad|udaas|dukhi|depressed|tension|stress)/)) {
+            const motivations = [
+                '💪 "Har mushkil ek naya mauka hai seekhne ka! Aaj ka din acha jayega - aur fresh vegetables ke saath toh aur bhi acha!" 🥬✨',
+                '🌟 "Chote chote kadam bade badlav late hain! Aaj ek healthy meal cook karo - feel good guaranteed!" 🍲💚',
+                '😊 "Zindagi mein jo bhi ho, ek acha khana sab theek kar deta hai! Kya banate ho aaj?" 🍱❤️'
+            ]
+            return response(motivations[Math.floor(Math.random() * motivations.length)],
+                [{ label: '🥗 Healthy products dekhein', action: 'navigate', path: '/products' }])
+        }
+
+        // --- LANGUAGE SWITCH ---
+        if (msg.match(/(speak english|english mein|hindi mein|speak hindi|in english|in hindi|hinglish)/)) {
+            return response('😊 Main Hindi, English, aur Hinglish - teeno mein baat kar sakta hoon!\n\n🇮🇳 **Hindi:** Bilkul baat karein\n🇬🇧 **English:** Of course, I can help!\n🔀 **Hinglish:** Yahi toh meri specialty hai!\n\nAap jo bhi language mein comfortable hain, main samjhungaa! 💬')
+        }
+
+        // --- RECIPE SUGGESTION ---
+        if (msg.match(/(recipe|khana|cook|banana hai|kaise banate|banana sikho|dish|meal|food|sabzi|curry)/)) {
+            return response(
+                '👨‍🍳 **Recipe Suggestions:**\n\nMain aapko ingredients suggest kar sakta hoon!\n\n🥗 **Sabzi Curry ke liye:** Tomatoes, Onions, Garlic, Ginger, Spices\n🍚 **Simple Dal ke liye:** Lentils, Tomatoes, Onion, Cumin\n🥙 **Stir Fry ke liye:** Mixed Vegetables, Oil, Garlic\n\nInn ingredients ki searching karein:',
+                [
+                    { label: '🍅 Vegetables dekhein', action: 'navigate', path: '/products/vegetables' },
+                    { label: '🛒 All Products', action: 'navigate', path: '/products' }
+                ]
+            )
         }
 
         // --- TRY PRODUCT NAME MATCH ---
@@ -334,8 +455,27 @@ const ChatBot = () => {
             )
         }
 
-        // --- DEFAULT ---
-        return response('🤔 Main samajh nahi paaya. Aap ye try kar sakte hain:\n\n• "Show Categories"\n• "Complaint"\n• "Track Order"')
+        // --- CALL GEMINI API FOR ANY UNRECOGNIZED/RANDOM MESSAGE ---
+        try {
+            const res = await axios.post('/api/chat/message', {
+                message: userMsg,
+                conversationHistory: conversationRef,
+                language: language  // pass selected language
+            });
+            if (res.data.success && res.data.reply) {
+                return response(res.data.reply);
+            }
+        } catch (err) {
+            console.log('Gemini chat error:', err.message);
+        }
+
+        // Final fallback if API fails
+        return response('🤖 Hmm, kuch samajh nahi aaya. "Show categories", "Tell me a joke", ya koi bhi sawaal poochein! 😊',
+            [
+                { label: '😂 Joke sunao', action: 'suggest', text: 'Tell me a joke' },
+                { label: '🔍 Categories', action: 'suggest', text: 'Show all categories' },
+            ]
+        )
     }
 
     const handleSend = async () => {
@@ -347,19 +487,17 @@ const ChatBot = () => {
         setInput('')
         setIsTyping(true)
 
-        // Process message (Async for API calls)
-        setTimeout(async () => {
-            const botData = await processMessage(userInput)
-            // Ensure compatibility if processMessage returned just string in some legacy path (guarded by helper now)
-            const botMsg = {
-                type: 'bot',
-                text: botData.text,
-                options: botData.options,
-                time: new Date()
-            }
-            setMessages(prev => [...prev, botMsg])
-            setIsTyping(false)
-        }, 800 + Math.random() * 700)
+        // Process message — pass current messages as conversation history for Gemini context
+        const currentMessages = [...messages, userMessage];
+        const botData = await processMessage(userInput, currentMessages)
+        const botMsg = {
+            type: 'bot',
+            text: botData.text,
+            options: botData.options,
+            time: new Date()
+        }
+        setMessages(prev => [...prev, botMsg])
+        setIsTyping(false)
     }
 
     const handleSuggestion = (suggestion) => {
@@ -401,98 +539,166 @@ const ChatBot = () => {
                 <div className='fixed bottom-24 right-6 w-[380px] max-w-[calc(100vw-48px)] h-[520px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 border border-gray-200'>
 
                     {/* Header */}
-                    <div className='bg-gradient-to-r from-primary to-green-600 text-white p-4 flex items-center gap-3'>
-                        <div className='w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl'>
+                    <div className='bg-gradient-to-r from-primary to-green-600 text-white p-3 flex items-center gap-3'>
+                        <div className='w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-lg flex-shrink-0'>
                             🤖
                         </div>
-                        <div className='flex-1'>
-                            <h3 className='font-bold text-sm'>Gaurav Grocery AI</h3>
+                        <div className='flex-1 min-w-0'>
+                            <h3 className='font-bold text-sm'>SabziKart AI</h3>
                             <p className='text-xs text-white/80 flex items-center gap-1'>
                                 <span className='w-2 h-2 bg-green-300 rounded-full inline-block animate-pulse'></span>
-                                Online • {complaintMode ? 'Listening to Complaint...' : 'Typically replies instantly'}
+                                {complaintMode ? 'Listening...' : 'Ask me anything!'}
                             </p>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className='text-white/70 hover:text-white text-xl cursor-pointer'>✕</button>
-                    </div>
-
-                    {/* Messages */}
-                    <div className='flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50'>
-                        {messages.map((msg, idx) => (
-                            <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.type === 'user'
-                                    ? 'bg-primary text-white rounded-br-sm'
-                                    : (msg.text.includes('Complaint Registered') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-white text-gray-700 rounded-bl-sm shadow-sm border border-gray-100')
-                                    }`}>
-                                    <div dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
-                                    <p className={`text-[10px] mt-1 ${msg.type === 'user' ? 'text-white/60' : 'text-gray-400'}`}>
-                                        {msg.time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                </div>
-                                {/* Message Options/Action Chips */}
-                                {msg.options && (
-                                    <div className="flex flex-wrap gap-2 mt-2 ml-2 max-w-[85%]">
-                                        {msg.options.map((opt, i) => (
-                                            <button
-                                                key={i}
-                                                onClick={() => handleOptionClick(opt)}
-                                                className="px-3 py-1.5 bg-green-50 text-green-700 text-xs border border-green-200 rounded-lg hover:bg-green-100 transition-colors shadow-sm cursor-pointer"
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-
-                        {isTyping && (
-                            <div className='flex justify-start'>
-                                <div className='bg-white text-gray-500 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm border border-gray-100 text-sm'>
-                                    <div className='flex gap-1'>
-                                        <span className='w-2 h-2 bg-gray-400 rounded-full animate-bounce' style={{ animationDelay: '0ms' }}></span>
-                                        <span className='w-2 h-2 bg-gray-400 rounded-full animate-bounce' style={{ animationDelay: '150ms' }}></span>
-                                        <span className='w-2 h-2 bg-gray-400 rounded-full animate-bounce' style={{ animationDelay: '300ms' }}></span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    {/* Suggestions (Hide in complaint mode) */}
-                    {!complaintMode && messages.length <= 4 && (
-                        <div className='px-3 py-2 bg-white border-t border-gray-100 flex flex-wrap gap-1.5'>
-                            {suggestions.map((s, i) => (
+                        {/* Language switcher */}
+                        <div className='flex items-center gap-1 bg-white/20 rounded-full px-1 py-0.5'>
+                            {[['EN', 'english'], ['हि', 'hindi'], ['Hi-En', 'hinglish']].map(([label, val]) => (
                                 <button
-                                    key={i}
-                                    onClick={() => handleSuggestion(s)}
-                                    className='px-2.5 py-1 text-xs bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition cursor-pointer whitespace-nowrap'
+                                    key={val}
+                                    onClick={() => setLanguage(val)}
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer ${language === val ? 'bg-white text-primary' : 'text-white/80 hover:text-white'
+                                        }`}
                                 >
-                                    {s}
+                                    {label}
                                 </button>
                             ))}
                         </div>
-                    )}
+                        <button onClick={() => setIsOpen(false)} className='text-white/70 hover:text-white text-xl cursor-pointer ml-1'>✕</button>
+                    </div>
 
-                    {/* Input */}
-                    <div className={`p-3 border-t border-gray-200 flex items-center gap-2 ${complaintMode ? 'bg-orange-50' : 'bg-white'}`}>
-                        <input
-                            type='text'
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={complaintMode ? 'Describe your issue details...' : 'Type your message...'}
-                            className={`flex-1 px-4 py-2.5 rounded-full outline-none text-sm placeholder-gray-400 focus:ring-2 transition ${complaintMode ? 'bg-white border-orange-200 focus:ring-orange-300' : 'bg-gray-100 focus:bg-gray-50 focus:ring-primary/30'}`}
-                            autoFocus={complaintMode}
-                        />
+                    {/* Tab Switcher */}
+                    <div className='flex border-b border-gray-200 bg-white'>
                         <button
-                            onClick={() => handleSend()}
-                            disabled={!input.trim()}
-                            className={`w-10 h-10 text-white rounded-full flex items-center justify-center cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed ${complaintMode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary-dull'}`}
+                            onClick={() => setChatTab('chat')}
+                            className={`flex-1 py-2 text-xs font-semibold transition cursor-pointer ${chatTab === 'chat'
+                                ? 'text-primary border-b-2 border-primary bg-primary/5'
+                                : 'text-gray-400 hover:text-gray-600'
+                                }`}
                         >
-                            ➤
+                            💬 Chat
+                        </button>
+                        <button
+                            onClick={() => setChatTab('categories')}
+                            className={`flex-1 py-2 text-xs font-semibold transition cursor-pointer ${chatTab === 'categories'
+                                ? 'text-primary border-b-2 border-primary bg-primary/5'
+                                : 'text-gray-400 hover:text-gray-600'
+                                }`}
+                        >
+                            🛍️ Categories
                         </button>
                     </div>
+
+                    {/* CATEGORIES TAB */}
+                    {chatTab === 'categories' && (
+                        <div className='flex-1 overflow-y-auto p-3 bg-gray-50'>
+                            <p className='text-xs text-gray-500 mb-3 font-medium'>📂 Sabhi categories — click karke browse karein:</p>
+                            <div className='grid grid-cols-2 gap-2'>
+                                {assetCategories.map((cat, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => { navigate(`/products/${cat.path.toLowerCase()}`); setIsOpen(false); }}
+                                        className='flex flex-col items-center gap-1.5 p-3 rounded-xl border border-gray-200 hover:border-primary hover:shadow-md transition-all cursor-pointer text-center group'
+                                        style={{ backgroundColor: cat.bgColor }}
+                                    >
+                                        <img src={cat.image} alt={cat.text} className='w-12 h-12 object-contain group-hover:scale-110 transition-transform' />
+                                        <span className='text-xs font-semibold text-gray-700'>{cat.text}</span>
+                                    </button>
+                                ))}
+                                {/* View All Products */}
+                                <button
+                                    onClick={() => { navigate('/products'); setIsOpen(false); }}
+                                    className='flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-dashed border-primary/40 hover:border-primary hover:shadow-md transition-all cursor-pointer text-center col-span-2 bg-primary/5'
+                                >
+                                    <span className='text-2xl'>🛒</span>
+                                    <span className='text-xs font-semibold text-primary'>View All Products</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CHAT TAB */}
+                    {chatTab === 'chat' && (
+                        <>
+                            {/* Messages */}
+                            <div className='flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50'>
+                                {messages.map((msg, idx) => (
+                                    <div key={idx} className={`flex flex-col ${msg.type === 'user' ? 'items-end' : 'items-start'}`}>
+                                        <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.type === 'user'
+                                            ? 'bg-primary text-white rounded-br-sm'
+                                            : (msg.text.includes('Complaint Registered') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-white text-gray-700 rounded-bl-sm shadow-sm border border-gray-100')
+                                            }`}>
+                                            <div dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
+                                            <p className={`text-[10px] mt-1 ${msg.type === 'user' ? 'text-white/60' : 'text-gray-400'}`}>
+                                                {msg.time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                        {/* Options/Action Chips — below the bubble, full width */}
+                                        {msg.options && msg.options.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mt-1.5 max-w-[90%]">
+                                                {msg.options.map((opt, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => handleOptionClick(opt)}
+                                                        className="px-3 py-1.5 bg-green-50 text-green-700 text-xs border border-green-200 rounded-lg hover:bg-green-100 transition-colors shadow-sm cursor-pointer"
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
+                                {isTyping && (
+                                    <div className='flex justify-start'>
+                                        <div className='bg-white text-gray-500 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm border border-gray-100 text-sm'>
+                                            <div className='flex gap-1'>
+                                                <span className='w-2 h-2 bg-gray-400 rounded-full animate-bounce' style={{ animationDelay: '0ms' }}></span>
+                                                <span className='w-2 h-2 bg-gray-400 rounded-full animate-bounce' style={{ animationDelay: '150ms' }}></span>
+                                                <span className='w-2 h-2 bg-gray-400 rounded-full animate-bounce' style={{ animationDelay: '300ms' }}></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Suggestions (Hide in complaint mode) */}
+                            {!complaintMode && messages.length <= 4 && (
+                                <div className='px-3 py-2 bg-white border-t border-gray-100 flex flex-wrap gap-1.5'>
+                                    {suggestions.map((s, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => handleSuggestion(s)}
+                                            className='px-2.5 py-1 text-xs bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition cursor-pointer whitespace-nowrap'
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Input */}
+                            <div className={`p-3 border-t border-gray-200 flex items-center gap-2 ${complaintMode ? 'bg-orange-50' : 'bg-white'}`}>
+                                <input
+                                    type='text'
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={complaintMode ? 'Describe your issue details...' : 'Type your message...'}
+                                    className={`flex-1 px-4 py-2.5 rounded-full outline-none text-sm placeholder-gray-400 focus:ring-2 transition ${complaintMode ? 'bg-white border-orange-200 focus:ring-orange-300' : 'bg-gray-100 focus:bg-gray-50 focus:ring-primary/30'}`}
+                                    autoFocus={complaintMode}
+                                />
+                                <button
+                                    onClick={() => handleSend()}
+                                    disabled={!input.trim()}
+                                    className={`w-10 h-10 text-white rounded-full flex items-center justify-center cursor-pointer transition disabled:opacity-40 disabled:cursor-not-allowed ${complaintMode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary-dull'}`}
+                                >
+                                    ➤
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
         </>

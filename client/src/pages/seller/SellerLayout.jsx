@@ -17,6 +17,9 @@ const SellerLayout = () => {
         { name: "Waste Reducer", path: "/seller/waste-reducer", icon: assets.product_list_icon },
         { name: "Report", path: "/seller/report", icon: assets.order_icon },
         { name: "Complaints", path: "/seller/complaints", icon: assets.order_icon },
+        { name: "Vendor Applications", path: "/seller/vendor-applications", icon: assets.add_icon },
+        { name: "Registered Shops", path: "/seller/vendors", icon: assets.product_list_icon },
+        { name: "All Orders", path: "/seller/all-orders", icon: assets.order_icon },
         { name: "Owner Profile", path: "/seller/owner-profile", icon: assets.add_icon },
     ];
 

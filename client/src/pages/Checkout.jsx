@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useAppContext } from '../context/AppContext'
 import toast from 'react-hot-toast'
 import { assets } from '../assets/assets'
@@ -62,7 +62,7 @@ const Checkout = () => {
             const { data } = await axios.post('/api/coupon/apply', {
                 code: couponCode,
                 cartAmount: getCartAmount()
-            })
+            }, { headers: { token: user.token } })
             if (data.success) {
                 setDiscount(data.discount)
                 toast.success(data.message)
@@ -80,17 +80,15 @@ const Checkout = () => {
     const [deliveryDate, setDeliveryDate] = useState("");
     const [deliveryTime, setDeliveryTime] = useState("");
 
-    // Generate next 7 days for delivery
-    const getDeliveryDates = () => {
-        const dates = [];
-        for (let i = 1; i <= 7; i++) {
+    // Use useMemo so the Date objects aren't recreated on every render, avoiding reference equality bugs.
+    const availableDates = useMemo(() => {
+        return Array.from({ length: 7 }, (_, i) => {
             const d = new Date();
-            d.setDate(d.getDate() + i);
-            dates.push(d);
-        }
-        return dates;
-    };
-    const availableDates = getDeliveryDates();
+            d.setDate(d.getDate() + i + 1);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        });
+    }, []);
 
     const handlePlaceOrder = async () => {
         if (!selectedAddress) return toast.error("Select delivery address")
@@ -227,16 +225,25 @@ const Checkout = () => {
                             <div>
                                 <p className="text-sm font-medium text-gray-700 mb-2">Select Date:</p>
                                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                    {availableDates.map((date, idx) => (
-                                        <div
-                                            key={idx}
-                                            onClick={() => setDeliveryDate(date)}
-                                            className={`min-w-[80px] p-3 rounded-lg border cursor-pointer text-center text-sm transition ${deliveryDate === date ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-gray-200 hover:border-primary/50'}`}
-                                        >
-                                            <p>{date.toLocaleDateString('en-US', { weekday: 'short' })}</p>
-                                            <p className="text-lg">{date.getDate()}</p>
-                                        </div>
-                                    ))}
+                                    {availableDates.map((dateObj, idx) => {
+                                        // Compare using timestamp instead of object reference
+                                        const isSelected = deliveryDate === dateObj.getTime();
+                                        return (
+                                            <div
+                                                key={idx}
+                                                // Store the timestamp as the selection
+                                                onClick={() => setDeliveryDate(dateObj.getTime())}
+                                                className={`min-w-[72px] p-3 rounded-xl border-2 cursor-pointer text-center text-sm transition-all ${isSelected
+                                                    ? 'border-primary bg-primary text-white font-bold shadow-md scale-105'
+                                                    : 'border-gray-200 hover:border-primary/50 hover:bg-primary/5'
+                                                    }`}
+                                            >
+                                                <p className="text-xs font-medium">{dateObj.toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                                                <p className="text-xl font-bold mt-0.5">{dateObj.getDate()}</p>
+                                                <p className="text-[10px] opacity-70">{dateObj.toLocaleDateString('en-US', { month: 'short' })}</p>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -322,24 +329,28 @@ const Checkout = () => {
 
                         {/* Coupon Section */}
                         <div className='mb-6'>
-                            <p className='text-sm font-medium text-gray-600 mb-2'>Have a Coupon?</p>
+                            <p className='text-sm font-medium text-gray-600 mb-2 flex justify-between'>
+                                <span>Have a Coupon?</span>
+                                <span className='text-xs text-primary bg-primary/10 px-2 py-0.5 rounded cursor-pointer' onClick={() => setCouponCode('SAVE10')}>Try SAVE10</span>
+                            </p>
                             <div className='flex gap-2'>
                                 <input
                                     type="text"
                                     value={couponCode}
                                     onChange={(e) => setCouponCode(e.target.value)}
-                                    placeholder="CODE100"
+                                    placeholder="Enter code"
                                     className='flex-1 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary uppercase text-sm'
                                 />
                                 <button
                                     onClick={handleApplyCoupon}
                                     disabled={isApplying}
-                                    className='bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-black transition-colors disabled:bg-gray-400'
+                                    className='bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-black transition-colors disabled:bg-gray-400 cursor-pointer'
                                 >
                                     {isApplying ? "..." : "Apply"}
                                 </button>
                             </div>
                             {discount > 0 && <p className='text-xs text-green-600 mt-1 font-medium'>✓ Coupon Applied Successfully!</p>}
+                            {discount === 0 && <p className='text-xs text-gray-400 mt-1'>Available codes: <span className='font-mono font-bold text-gray-600 cursor-pointer hover:text-primary' onClick={() => setCouponCode('WELCOME20')}>WELCOME20</span> (20% off), <span className='font-mono font-bold text-gray-600 cursor-pointer hover:text-primary' onClick={() => setCouponCode('FLAT50')}>FLAT50</span> (Flat ₹50 off)</p>}
                         </div>
 
                         <div className='space-y-3 text-sm border-b border-gray-100 pb-4 mb-4'>

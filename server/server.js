@@ -26,6 +26,10 @@ import couponRouter from './routes/couponRoute.js';
 // Notify Router for stock alerts
 import notifyRouter from './routes/notifyRoute.js';
 import complaintRouter from './routes/complaintRoute.js';
+import healthProfileRouter from './routes/healthProfileRoute.js';
+import chatRouter from './routes/chatRoute.js';
+import sellerApplicationRouter from './routes/sellerApplicationRoute.js';
+import adminSellerRouter from './routes/adminSellerRoute.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -80,6 +84,10 @@ app.use('/api/contact', contactRouter);
 app.use('/api/coupon', couponRouter);
 app.use('/api/notify', notifyRouter);
 app.use('/api/complaint', complaintRouter);
+app.use('/api/health', healthProfileRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/seller-application', sellerApplicationRouter);
+app.use('/api/admin', adminSellerRouter);
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`)

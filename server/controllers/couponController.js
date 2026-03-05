@@ -4,12 +4,17 @@ import Coupon from "../models/Coupon.js";
 export const applyCoupon = async (req, res) => {
     try {
         const { code, cartAmount } = req.body;
+        console.log("Apply coupon API called with:", req.body);
 
         if (!code) {
             return res.json({ success: false, message: "Please enter a coupon code" });
         }
 
-        const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
+        const query = { code: code.toUpperCase(), isActive: true };
+        console.log("Searching DB for coupon query:", query);
+
+        const coupon = await Coupon.findOne(query);
+        console.log("DB Result:", coupon);
 
         if (!coupon) {
             return res.json({ success: false, message: "Invalid coupon code" });

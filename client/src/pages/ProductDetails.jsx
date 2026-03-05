@@ -156,6 +156,19 @@ const ProductDetails = () => {
                     </ul>
 
                     <div className="flex items-center mt-10 gap-4 text-base">
+                        {/* Low Stock Warning — shown only when stock ≤ 10 */}
+                        {(() => {
+                            const sqty = Number(product.stockQuantity);
+                            const sq = isNaN(sqty) ? 0 : sqty;
+                            return product.inStock && sq > 0 && sq <= 10 ? (
+                                <div className="w-full mb-[-28px]">
+                                    <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 text-sm font-medium px-4 py-2.5 rounded-lg">
+                                        <span className="text-base">🔥</span>
+                                        <span>Only <strong>{sq}</strong> item{sq > 1 ? 's' : ''} left! Order soon.</span>
+                                    </div>
+                                </div>
+                            ) : null;
+                        })()}
                         {product.inStock ? (
                             <>
                                 <button onClick={() => addToCart(product._id)} className="w-full py-3.5 cursor-pointer font-medium bg-gray-100 text-gray-800/80 hover:bg-gray-200 transition" >

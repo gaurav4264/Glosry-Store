@@ -23,6 +23,8 @@ const productSchema = new mongoose.Schema({
     lowStockThreshold: { type: Number, default: 10 },
     lastRestocked: { type: Date, default: Date.now },
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'shop', default: null },
+    vendorId: { type: String, default: null },        // SellerApplication._id
+    vendorShopName: { type: String, default: null },  // for display
     manufacturingDate: { type: Date, default: null },
     expiryDate: { type: Date, default: null },
 }, { timestamps: true })

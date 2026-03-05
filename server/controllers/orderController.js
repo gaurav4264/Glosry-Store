@@ -27,10 +27,27 @@ const awardLoyaltyPoints = async (userId, orderAmount) => {
     }
 };
 
+// Helper: Decrement stock for ordered items, auto mark Out of Stock when qty hits 0
+const decrementStock = async (items) => {
+    try {
+        for (const item of items) {
+            const product = await Product.findById(item.product);
+            if (!product) continue;
+            const newQty = Math.max(0, (product.stockQuantity ?? 0) - item.quantity);
+            await Product.findByIdAndUpdate(item.product, {
+                stockQuantity: newQty,
+                inStock: newQty > 0,
+            });
+        }
+    } catch (err) {
+        console.log('Stock decrement error:', err.message);
+    }
+};
+
 // Place Order COD : /api/order/cod
 export const placeOrderCOD = async (req, res) => {
     try {
-        const { userId, items, address, couponCode, couponDiscount } = req.body;
+        const { userId, items, address, couponCode, couponDiscount, scheduledDeliveryDate, deliveryTimeSlot } = req.body;
         if (!address || items.length === 0) {
             return res.json({ success: false, message: "Invalid data" })
         }
@@ -60,7 +77,12 @@ export const placeOrderCOD = async (req, res) => {
             paymentType: "COD",
             couponCode: couponCode || null,
             discount,
+            scheduledDeliveryDate: scheduledDeliveryDate || null,
+            deliveryTimeSlot: deliveryTimeSlot || null,
         });
+
+        // Decrement stock for each ordered item
+        await decrementStock(items);
 
         // Clear user cart
         await User.findByIdAndUpdate(userId, { cartItems: {} });
@@ -104,7 +126,7 @@ export const updateStatus = async (req, res) => {
 // Place Order Stripe : /api/order/stripe
 export const placeOrderStripe = async (req, res) => {
     try {
-        const { userId, items, address, couponCode, couponDiscount } = req.body;
+        const { userId, items, address, couponCode, couponDiscount, scheduledDeliveryDate, deliveryTimeSlot } = req.body;
         const { origin } = req.headers;
 
         if (!address || items.length === 0) {
@@ -143,7 +165,12 @@ export const placeOrderStripe = async (req, res) => {
             paymentType: "Online",
             couponCode: couponCode || null,
             discount,
+            scheduledDeliveryDate: scheduledDeliveryDate || null,
+            deliveryTimeSlot: deliveryTimeSlot || null,
         });
+
+        // Decrement stock immediately on session creation (reserve stock)
+        await decrementStock(items);
 
         // Stripe Gateway Initialize    
         const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);

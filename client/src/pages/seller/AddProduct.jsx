@@ -14,6 +14,7 @@ const AddProduct = () => {
     const [shopId, setShopId] = useState('');
     const [manufacturingDate, setManufacturingDate] = useState('');
     const [expiryDate, setExpiryDate] = useState('');
+    const [stockQuantity, setStockQuantity] = useState(100);
     const [shops, setShops] = useState([]);
 
     const { axios, fetchProducts } = useAppContext()
@@ -44,6 +45,7 @@ const AddProduct = () => {
                 category,
                 price,
                 offerPrice,
+                stockQuantity: Number(stockQuantity) || 100,
                 shopId: shopId || null,
                 manufacturingDate: manufacturingDate || null,
                 expiryDate: expiryDate || null
@@ -68,6 +70,7 @@ const AddProduct = () => {
                 setShopId('')
                 setManufacturingDate('')
                 setExpiryDate('')
+                setStockQuantity(100)
                 setFiles([])
             } else {
                 toast.error(data.message)
@@ -140,6 +143,22 @@ const AddProduct = () => {
                         <label className="text-base font-medium" htmlFor="offer-price">Offer Price</label>
                         <input onChange={(e) => setOfferPrice(e.target.value)} value={offerPrice}
                             id="offer-price" type="number" placeholder="20" className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40" required />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-base font-medium" htmlFor="stock-quantity">
+                            Stock Quantity
+                            <span className="ml-1 text-xs text-gray-400">(units available)</span>
+                        </label>
+                        <input
+                            onChange={(e) => setStockQuantity(e.target.value)}
+                            value={stockQuantity}
+                            id="stock-quantity"
+                            type="number"
+                            min="0"
+                            placeholder="100"
+                            className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40 w-32"
+                            required
+                        />
                     </div>
                 </div>
                 <div className="flex items-center gap-5 flex-wrap">

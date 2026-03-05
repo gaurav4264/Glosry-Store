@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from "cloudinary"
 import Product from "../models/Product.js"
+import SellerApplication from "../models/SellerApplication.js"
+import Order from "../models/Order.js"
 
 // Add Product : /api/product/add
 export const addProduct = async (req, res) => {
@@ -23,9 +25,18 @@ export const addProduct = async (req, res) => {
             })
         )
 
-        await Product.create({ ...productData, image: imagesUrl })
+        // Attach vendorId if added by a vendor (not admin)
+        let vendorId = null;
+        let vendorShopName = null;
+        if (req.vendorId) {
+            vendorId = req.vendorId.toString(); // always save as string for consistency
+            const vendor = await SellerApplication.findById(req.vendorId).select('shopName');
+            vendorShopName = vendor?.shopName || null;
+        }
 
-        res.json({ success: true, message: "Product Added" })
+        await Product.create({ ...productData, image: imagesUrl, vendorId, vendorShopName })
+
+        res.json({ success: true, message: "Product Added Successfully!" })
 
     } catch (error) {
         console.log(error.message);
@@ -33,10 +44,11 @@ export const addProduct = async (req, res) => {
     }
 }
 
+
 // Get Product : /api/product/list
 export const productList = async (req, res) => {
     try {
-        const products = await Product.find({})
+        const products = await Product.find({ inStock: true })
         res.json({ success: true, products })
     } catch (error) {
         console.log(error.message);
@@ -125,6 +137,24 @@ export const removeProduct = async (req, res) => {
     } catch (error) {
         console.log(error.message);
         res.json({ success: false, message: error.message })
+    }
+}
+
+// Update Stock Quantity : /api/product/update-stock
+export const updateStockQuantity = async (req, res) => {
+    try {
+        const { id, stockQuantity } = req.body;
+        const qty = Number(stockQuantity);
+        if (isNaN(qty) || qty < 0) {
+            return res.json({ success: false, message: 'Invalid stock quantity' });
+        }
+        // Auto set inStock based on quantity
+        const inStock = qty > 0;
+        await Product.findByIdAndUpdate(id, { stockQuantity: qty, inStock });
+        res.json({ success: true, message: `Stock updated to ${qty}` });
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message });
     }
 }
 

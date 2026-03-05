@@ -1,26 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { assets } from '../assets/assets';
 import { Link } from 'react-router-dom';
+import banner1 from '../assets/banner1.png';
+import banner2 from '../assets/banner2.png';
+import banner3 from '../assets/banner3.png';
+import banner4 from '../assets/banner4.png';
 
 const MainBanner = () => {
   const sliderData = [
     {
       id: 1,
-      image: assets.main_banner_bg,
-      imageSm: assets.main_banner_bg_sm,
-      title: "Freshness You Can Trust, Savings You will Love!",
-      buttonText: "Shop now",
+      image: banner1,
+      imageSm: banner1,
+      title: "Freshness You Can Trust, Savings You Will Love!",
+      buttonText: "Shop Now",
       link: "/products"
     },
     {
       id: 2,
-      image: assets.bottom_banner_image,
-      imageSm: assets.bottom_banner_image_sm,
-      title: "Best Quality Groceries Delivered to Your Doorstep!",
+      image: banner2,
+      imageSm: banner2,
+      title: "Fresh Groceries Delivered to Your Doorstep!",
       buttonText: "Order Now",
       link: "/products"
     },
-
+    {
+      id: 3,
+      image: banner3,
+      imageSm: banner3,
+      title: "Farm Fresh Organic Produce Every Day!",
+      buttonText: "Explore Now",
+      link: "/products/vegetables"
+    },
+    {
+      id: 4,
+      image: banner4,
+      imageSm: banner4,
+      title: "Shop Smart, Eat Fresh, Live Healthy!",
+      buttonText: "Start Shopping",
+      link: "/products/fruits"
+    },
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -52,8 +71,8 @@ const MainBanner = () => {
           <img src={slide.image} alt="banner" className='w-full h-full object-cover hidden md:block' />
           <img src={slide.imageSm} alt="banner" className='w-full h-full object-cover md:hidden' />
 
-          <div className='absolute inset-0 flex flex-col items-center md:items-start justify-end md:justify-center pb-12 md:pb-0 px-4 md:pl-18 lg:pl-24 bg-gradient-to-t from-black/50 via-transparent to-transparent md:bg-none'>
-            <h1 className='text-3xl md:text-4xl lg:text-5xl font-bold text-center md:text-left max-w-lg leading-tight lg:leading-snug text-white md:text-black drop-shadow-md md:drop-shadow-none transition-transform duration-700 ease-out transform translate-y-0'>
+          <div className='absolute inset-0 flex flex-col items-center md:items-start justify-end md:justify-center pb-12 md:pb-0 px-4 md:pl-18 lg:pl-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent md:bg-gradient-to-r md:from-black/65 md:via-black/30 md:to-transparent'>
+            <h1 className='text-3xl md:text-4xl lg:text-5xl font-bold text-center md:text-left max-w-lg leading-tight lg:leading-snug text-white drop-shadow-lg transition-transform duration-700 ease-out transform translate-y-0'>
               {slide.title}
             </h1>
 

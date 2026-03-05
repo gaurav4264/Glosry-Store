@@ -59,7 +59,11 @@ const Navbar = () => {
               <span className='text-lg w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center'>💰</span>
               <div><p className='font-medium text-gray-800'>Budget Bag</p><p className='text-[11px] text-gray-400'>AI fills your cart smartly</p></div>
             </div>
-            <div onClick={() => navigate('/complaint')} className='px-4 py-2.5 hover:bg-red-50 cursor-pointer flex items-center gap-3 transition-colors duration-200 border-t border-gray-100 mt-1'>
+            <div onClick={() => navigate('/health-profile')} className='px-4 py-2.5 hover:bg-rose-50 cursor-pointer flex items-center gap-3 transition-colors duration-200 border-t border-gray-100 mt-1'>
+              <span className='text-lg w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center'>🩺</span>
+              <div><p className='font-medium text-gray-800'>Health Advisor</p><p className='text-[11px] text-gray-400'>AI grocery picks for your health</p></div>
+            </div>
+            <div onClick={() => navigate('/complaint')} className='px-4 py-2.5 hover:bg-red-50 cursor-pointer flex items-center gap-3 transition-colors duration-200'>
               <span className='text-lg w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center'>📢</span>
               <div><p className='font-medium text-gray-800'>Raise Complaint</p><p className='text-[11px] text-gray-400'>We are here to help</p></div>
             </div>
@@ -125,6 +129,7 @@ const Navbar = () => {
               <NavLink to="/loyalty" onClick={() => setOpen(false)}>💎 Loyalty Points</NavLink>
               <NavLink to="/smart-pantry" onClick={() => setOpen(false)}>🥬 Smart Pantry</NavLink>
               <NavLink to="/budget-bag" onClick={() => setOpen(false)}>💰 Budget Bag</NavLink>
+              <NavLink to="/health-profile" onClick={() => setOpen(false)}>🩺 Health Advisor</NavLink>
             </>
           }
           <NavLink to="/contact" onClick={() => setOpen(false)}>Contact</NavLink>

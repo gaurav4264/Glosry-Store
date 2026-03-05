@@ -44,10 +44,10 @@ const ProductCard = ({ product }) => {
         }
     };
 
-    const stockQuantity = product.stockQuantity || 0;
-    // Utilize inStock boolean from seller toggle AND quantity
+    const stockQty = Number(product.stockQuantity);
+    const stockQuantity = isNaN(stockQty) ? 0 : stockQty;
     const isOutOfStock = !product.inStock || stockQuantity === 0;
-    const isLowStock = stockQuantity > 0 && stockQuantity < 10;
+    const isLowStock = product.inStock && stockQuantity > 0 && stockQuantity <= 10;
 
     return product && (
         <div onClick={() => { navigate(`/products/${product.category.toLowerCase()}/${product._id}`); scrollTo(0, 0) }} className="border border-gray-500/20 rounded-md md:px-4 px-3 py-2 bg-white min-w-56 max-w-56 w-full relative">
@@ -59,23 +59,25 @@ const ProductCard = ({ product }) => {
                 {inWishlist ? '❤️' : '🤍'}
             </button>
 
-            {/* Stock Badge */}
+            {/* Out of Stock Badge */}
             {isOutOfStock && (
                 <div className="absolute top-3 left-3 z-10 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
                     OUT OF STOCK
                 </div>
             )}
-            {isLowStock && !isOutOfStock && (
+            {/* Low Stock Warning — shown only when stock between 1 and 10 */}
+            {isLowStock && (
                 <div className="absolute top-3 left-3 z-10 bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold">
-                    LOW STOCK
+                    Only {stockQuantity} left!
                 </div>
             )}
 
             <div className="group cursor-pointer flex items-center justify-center px-2">
                 <img
                     className={`group-hover:scale-105 transition max-w-26 md:max-w-36 ${isOutOfStock ? 'opacity-50 grayscale' : ''}`}
-                    src={product.image[0]}
+                    src={product.image?.[0] || 'https://placehold.co/150x150?text=No+Image'}
                     alt={product.name}
+                    onError={(e) => { e.target.src = 'https://placehold.co/150x150?text=No+Image'; }}
                 />
             </div>
             <div className="text-gray-500/60 text-sm">
@@ -84,11 +86,11 @@ const ProductCard = ({ product }) => {
                 <div className="flex items-center gap-0.5">
                     <div className="flex items-center gap-1 text-yellow-500">
                         <p className="font-bold">
-                            {product.ratings.length > 0 ? (product.ratings.reduce((acc, curr) => acc + curr.rating, 0) / product.ratings.length).toFixed(1) : 0}
+                            {(product.ratings?.length > 0) ? (product.ratings.reduce((acc, curr) => acc + curr.rating, 0) / product.ratings.length).toFixed(1) : '0.0'}
                         </p>
                         <img src={assets.star_icon} className="md:w-4 w-3.5" />
                     </div>
-                    <p className="text-gray-500">({product.ratings.length})</p>
+                    <p className="text-gray-500">({product.ratings?.length || 0})</p>
                 </div>
                 <div className="flex items-end justify-between mt-3">
                     <p className="md:text-xl text-base font-medium text-primary">

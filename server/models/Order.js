@@ -32,6 +32,13 @@ const orderSchema = new mongoose.Schema({
         status: String,
         timestamp: { type: Date, default: Date.now }
     }],
+    sellerId: { type: String, default: null },   // Vendor's sellerId who fulfills this order
+    trackingId: { type: String, default: null }, // Auto-generated when shipped
+    vendorStatus: {
+        type: String,
+        enum: ['Pending', 'Accepted', 'Rejected', 'Packed', 'Shipped', 'Delivered'],
+        default: 'Pending'
+    },
 }, { timestamps: true })
 
 const Order = mongoose.models.order || mongoose.model('order', orderSchema)
