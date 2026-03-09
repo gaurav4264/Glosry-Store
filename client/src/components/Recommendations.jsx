@@ -15,36 +15,40 @@ const Recommendations = ({ productId = null, userId = null }) => {
     const fetchRecommendations = async () => {
         try {
             setLoading(true);
-            let data;
+            let responseData;
 
             if (productId) {
                 // Fetch "Frequently Bought Together" for product page
                 const response = await axios.get(`/api/recommend/frequently-bought/${productId}`);
-                data = response.data;
+                responseData = response.data;
                 setReason('Frequently Bought Together');
             } else {
                 // Fetch personalized or trending recommendations for homepage
                 try {
                     const response = await axios.post('/api/recommend/personal');
-                    data = response.data;
-                    setReason(data.reason || 'Recommended for You');
+                    if (!response.data.success) {
+                        throw new Error("Personal recommendations unavailable");
+                    }
+                    responseData = response.data;
+                    setReason(responseData.reason || 'Recommended for You');
                 } catch (error) {
-                    // If user not logged in, show trending
+                    console.log("Personal recommend failed, falling back to trending");
+                    // If user not logged in or endpoint fails, show trending
                     const response = await axios.get('/api/recommend/trending');
-                    data = response.data;
-                    setRecommendations(data.trending || []);
+                    responseData = response.data;
                     setReason('Trending Products');
-                    setLoading(false);
-                    return;
                 }
             }
 
-            if (data.success) {
-                setRecommendations(data.recommendations || data.trending || []);
+            if (responseData && responseData.success) {
+                setRecommendations(responseData.recommendations || responseData.trending || []);
+            } else {
+                setRecommendations([]);
             }
-            setLoading(false);
         } catch (error) {
             console.error(error);
+            setRecommendations([]);
+        } finally {
             setLoading(false);
         }
     };

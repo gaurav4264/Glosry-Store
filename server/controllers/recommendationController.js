@@ -58,35 +58,44 @@ export const getFrequentlyBoughtTogether = async (req, res) => {
             'items.product': productId
         });
 
-        if (orders.length === 0) {
-            return res.json({
-                success: true,
-                recommendations: [],
-                message: 'No recommendations available'
-            });
+        const targetProduct = await Product.findById(productId);
+        if (!targetProduct) {
+            return res.json({ success: false, message: 'Product not found' });
         }
 
-        // Count co-occurring products
-        const coOccurrence = {};
-        orders.forEach(order => {
-            order.items.forEach(item => {
-                const itemId = item.product.toString();
-                if (itemId !== productId) {
-                    coOccurrence[itemId] = (coOccurrence[itemId] || 0) + 1;
-                }
+        let recommendations = [];
+
+        if (orders.length > 0) {
+            // Count co-occurring products
+            const coOccurrence = {};
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    const itemId = item.product.toString();
+                    if (itemId !== productId) {
+                        coOccurrence[itemId] = (coOccurrence[itemId] || 0) + 1;
+                    }
+                });
             });
-        });
 
-        // Get top 4 most frequently bought together
-        const topProductIds = Object.entries(coOccurrence)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 4)
-            .map(([id]) => id);
+            // Get top 4 most frequently bought together
+            const topProductIds = Object.entries(coOccurrence)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 4)
+                .map(([id]) => id);
 
-        const recommendations = await Product.find({
-            _id: { $in: topProductIds }
-            // inStock: true <-- Removed
-        });
+            if (topProductIds.length > 0) {
+                recommendations = await Product.find({ _id: { $in: topProductIds } });
+            }
+        }
+
+        // FALLBACK: If no co-occurring products found, recommend from the same category
+        if (recommendations.length === 0) {
+            recommendations = await Product.find({
+                category: targetProduct.category,
+                _id: { $ne: productId },
+                inStock: true
+            }).limit(4);
+        }
 
         res.json({
             success: true,
@@ -109,25 +118,33 @@ export const getTrendingProducts = async (req, res) => {
             createdAt: { $gte: thirtyDaysAgo }
         });
 
-        // Count product occurrences
-        const productCount = {};
-        recentOrders.forEach(order => {
-            order.items.forEach(item => {
-                const productId = item.product.toString();
-                productCount[productId] = (productCount[productId] || 0) + item.quantity;
+        let trendingProducts = [];
+
+        if (recentOrders.length > 0) {
+            // Count product occurrences
+            const productCount = {};
+            recentOrders.forEach(order => {
+                order.items.forEach(item => {
+                    const productId = item.product.toString();
+                    productCount[productId] = (productCount[productId] || 0) + item.quantity;
+                });
             });
-        });
 
-        // Get top 8 trending products
-        const trendingIds = Object.entries(productCount)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 8)
-            .map(([id]) => id);
+            // Get top 8 trending products
+            const trendingIds = Object.entries(productCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8)
+                .map(([id]) => id);
 
-        const trendingProducts = await Product.find({
-            _id: { $in: trendingIds }
-            // inStock: true  <-- Removed to show out of stock items
-        });
+            if (trendingIds.length > 0) {
+                trendingProducts = await Product.find({ _id: { $in: trendingIds } });
+            }
+        }
+
+        // FALLBACK: If no recent orders, just return the latest/most popular 8 products
+        if (trendingProducts.length === 0) {
+            trendingProducts = await Product.find({ inStock: true }).sort({ createdAt: -1 }).limit(8);
+        }
 
         res.json({
             success: true,

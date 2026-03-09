@@ -2,6 +2,48 @@ import User from "../models/User.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v2 as cloudinary } from 'cloudinary';
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Google Login : /api/user/google-login
+export const googleLogin = async (req, res) => {
+    try {
+        const { userInfo } = req.body;
+        if (!userInfo || !userInfo.email) return res.json({ success: false, message: 'Google user info missing' });
+
+        const { email, name, picture, sub: googleId } = userInfo;
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            user = await User.create({
+                name: name || email.split('@')[0],
+                email,
+                googleId,
+                profilePhoto: picture || null,
+                password: await bcrypt.hash((googleId || email) + Date.now() + process.env.JWT_SECRET, 10),
+            });
+        } else if (!user.googleId) {
+            user.googleId = googleId;
+            if (!user.profilePhoto && picture) user.profilePhoto = picture;
+            await user.save();
+        }
+
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        return res.json({ success: true, user: { email: user.email, name: user.name, profilePhoto: user.profilePhoto } });
+    } catch (error) {
+        console.error('Google login error:', error.message);
+        res.json({ success: false, message: 'Google sign-in failed. Please try again.' });
+    }
+};
+
 
 // Register User : /api/user/register
 export const register = async (req, res) => {

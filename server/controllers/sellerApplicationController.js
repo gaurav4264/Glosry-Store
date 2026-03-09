@@ -344,9 +344,9 @@ export const getVendorOrders = async (req, res) => {
         const allOrders = await Order.find({}).populate('address').sort({ createdAt: -1 });
 
         const vendorOrders = allOrders.filter(order =>
-            order.items.some(item => productIds.includes((item.product?._id || item.product)?.toString()))
+            (order.items || []).some(item => productIds.includes((item.product?._id || item.product)?.toString()))
         ).map(order => {
-            const myItems = order.items
+            const myItems = (order.items || [])
                 .filter(item => productIds.includes((item.product?._id || item.product)?.toString()))
                 .map(item => {
                     const pId = (item.product?._id || item.product)?.toString();
@@ -426,6 +426,10 @@ export const updateVendorOrderStatus = async (req, res) => {
             order.trackingId = `TRK-${vendorSellerId}-${Date.now()}`;
         }
 
+        if (vendorStatus === 'Delivered' && order.paymentType === 'COD') {
+            order.isPaid = true;
+        }
+
         order.statusHistory = order.statusHistory || [];
         order.statusHistory.push({ status: order.status, timestamp: new Date() });
 
@@ -438,6 +442,17 @@ export const updateVendorOrderStatus = async (req, res) => {
         });
     } catch (error) {
         console.error('updateVendorOrderStatus error:', error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// GET /api/seller/vendor-low-stock-alerts
+export const vendorLowStockAlerts = async (req, res) => {
+    try {
+        const vendorId = req.vendorId?.toString();
+        const products = await Product.find({ vendorId, inStock: true, stockQuantity: { $lte: 10, $gt: 0 } }).select('name stockQuantity category');
+        res.json({ success: true, count: products.length, products });
+    } catch (error) {
         res.json({ success: false, message: error.message });
     }
 };

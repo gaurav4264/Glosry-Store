@@ -53,9 +53,13 @@ export const AppContextProvider = ({ children }) => {
 
 
     // Fetch All Products
-    const fetchProducts = async () => {
+    const fetchProducts = async (lat, lng) => {
         try {
-            const { data } = await axios.get('/api/product/list')
+            let url = '/api/product/list';
+            if (lat && lng) {
+                url += `?lat=${lat}&lng=${lng}`;
+            }
+            const { data } = await axios.get(url)
             if (data.success) {
                 setProducts(data.products)
             } else {
@@ -126,6 +130,20 @@ export const AppContextProvider = ({ children }) => {
         fetchUser()
         fetchSeller()
         fetchProducts()
+
+        // Get user location for nearest shop sorting
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    fetchProducts(lat, lng);
+                },
+                (error) => {
+                    console.log("Geolocation error:", error);
+                }
+            );
+        }
     }, [])
 
     // Update Database Cart Items

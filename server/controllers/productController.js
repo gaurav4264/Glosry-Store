@@ -48,7 +48,50 @@ export const addProduct = async (req, res) => {
 // Get Product : /api/product/list
 export const productList = async (req, res) => {
     try {
-        const products = await Product.find({ inStock: true })
+        const products = await Product.find({ inStock: true }).lean();
+
+        const { lat, lng } = req.query;
+        if (lat && lng) {
+            const userLat = parseFloat(lat);
+            const userLng = parseFloat(lng);
+
+            // Fetch vendors to get their locations
+            const vendors = await SellerApplication.find({ status: 'approved' }).select('_id location').lean();
+            const vendorMap = {};
+            vendors.forEach(v => {
+                if (v.location && v.location.coordinates && v.location.coordinates.length === 2 && v.location.coordinates[0] !== 0) {
+                    vendorMap[v._id.toString()] = {
+                        lng: v.location.coordinates[0],
+                        lat: v.location.coordinates[1]
+                    };
+                }
+            });
+
+            const getDistance = (lat1, lon1, lat2, lon2) => {
+                const R = 6371; // km
+                const dLat = (lat2 - lat1) * (Math.PI / 180);
+                const dLon = (lon2 - lon1) * (Math.PI / 180);
+                const a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            };
+
+            products.forEach(p => {
+                if (p.vendorId && vendorMap[p.vendorId]) {
+                    const shopLoc = vendorMap[p.vendorId];
+                    p.distance = getDistance(userLat, userLng, shopLoc.lat, shopLoc.lng);
+                } else {
+                    p.distance = Infinity;
+                }
+            });
+
+            // Sort products by nearest distance
+            products.sort((a, b) => a.distance - b.distance);
+        }
+
         res.json({ success: true, products })
     } catch (error) {
         console.log(error.message);
@@ -176,6 +219,17 @@ export const deleteProductRating = async (req, res) => {
         product.ratings.splice(ratingIndex, 1);
         await product.save();
         res.json({ success: true, message: "Review Deleted" })
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Get Low Stock Alerts for Admin : /api/product/low-stock-alerts
+export const lowStockAlerts = async (req, res) => {
+    try {
+        const products = await Product.find({ inStock: true, stockQuantity: { $lte: 10, $gt: 0 } }).select('name stockQuantity category vendorShopName');
+        res.json({ success: true, count: products.length, products })
     } catch (error) {
         console.log(error.message);
         res.json({ success: false, message: error.message })

@@ -1,75 +1,301 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 
+const EyeIcon = ({ open }) => open ? (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+    </svg>
+) : (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+);
+
+const GoogleIcon = () => (
+    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+);
+
 const Login = () => {
+    const { setShowUserLogin, setUser, axios, navigate } = useAppContext();
 
-    const {setShowUserLogin, setUser, axios, navigate} = useAppContext()
+    const [state, setState] = useState('login');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
+    const [errors, setErrors] = useState({});
 
-    const [state, setState] = React.useState("login");
-    const [name, setName] = React.useState("");
-    const [email, setEmail] = React.useState("");
-    const [password, setPassword] = React.useState("");
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const googleEnabled = Boolean(GOOGLE_CLIENT_ID);
 
-    const onSubmitHandler = async (event)=>{
-        try {
-            event.preventDefault();
+    // Load Google Identity Services script
+    useEffect(() => {
+        if (!googleEnabled) return;
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+        return () => { document.body.removeChild(script); };
+    }, [googleEnabled]);
 
-            const {data} = await axios.post(`/api/user/${state}`,{
-                name, email, password
-            });
-            if (data.success){
-                navigate('/')
-                setUser(data.user)
-                setShowUserLogin(false)
-            }else{
-                toast.error(data.message)
-            }
-
-        } catch (error) {
-            toast.error(error.message)
+    const handleGoogleLogin = () => {
+        if (!googleEnabled || !window.google) {
+            toast.error('Google login not configured yet.');
+            return;
         }
-        
-       
-        
-    }
+        setGoogleLoading(true);
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'email profile',
+            callback: async (response) => {
+                if (response.error) {
+                    toast.error('Google sign-in cancelled.');
+                    setGoogleLoading(false);
+                    return;
+                }
+                try {
+                    const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                        headers: { Authorization: `Bearer ${response.access_token}` }
+                    }).then(r => r.json());
 
-  return (
-    <div onClick={()=> setShowUserLogin(false)} className='fixed top-0 bottom-0 left-0 right-0 z-30 flex items-center text-sm text-gray-600 bg-black/50'>
+                    const { data } = await axios.post('/api/user/google-login', { userInfo });
+                    if (data.success) {
+                        setUser(data.user);
+                        setShowUserLogin(false);
+                        navigate('/');
+                        toast.success(`Welcome, ${data.user.name}! 🎉`);
+                    } else {
+                        toast.error(data.message || 'Google login failed');
+                    }
+                } catch (e) {
+                    toast.error('Google login failed. Please try again.');
+                } finally {
+                    setGoogleLoading(false);
+                }
+            },
+        });
+        client.requestAccessToken();
+    };
 
-      <form onSubmit={onSubmitHandler} onClick={(e)=>e.stopPropagation()} className="flex flex-col gap-4 m-auto items-start p-8 py-12 w-80 sm:w-[352px] rounded-lg shadow-xl border border-gray-200 bg-white">
-            <p className="text-2xl font-medium m-auto">
-                <span className="text-primary">User</span> {state === "login" ? "Login" : "Sign Up"}
-            </p>
-            {state === "register" && (
-                <div className="w-full">
-                    <p>Name</p>
-                    <input onChange={(e) => setName(e.target.value)} value={name} placeholder="type here" className="border border-gray-200 rounded w-full p-2 mt-1 outline-primary" type="text" required />
+    const validate = () => {
+        const e = {};
+        if (state === 'register' && !name.trim()) e.name = 'Name is required';
+        if (!email.trim()) e.email = 'Email is required';
+        else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Enter a valid email';
+        if (!password) e.password = 'Password is required';
+        else if (password.length < 6) e.password = 'Minimum 6 characters';
+        setErrors(e);
+        return Object.keys(e).length === 0;
+    };
+
+    const onSubmitHandler = async (event) => {
+        event.preventDefault();
+        if (!validate()) return;
+        setLoading(true);
+        try {
+            const { data } = await axios.post(`/api/user/${state}`, { name, email, password });
+            if (data.success) {
+                setUser(data.user);
+                setShowUserLogin(false);
+                navigate('/');
+                toast.success(state === 'register' ? `Welcome, ${data.user.name}! 🎉` : `Welcome back, ${data.user.name}!`);
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const switchState = (newState) => {
+        setState(newState);
+        setErrors({});
+        setName('');
+        setEmail('');
+        setPassword('');
+    };
+
+    const inp = (hasErr) =>
+        `w-full border-2 rounded-xl px-4 py-3 text-sm outline-none transition-all placeholder-gray-300 ${hasErr
+            ? 'border-red-400 bg-red-50 focus:border-red-500'
+            : 'border-gray-200 focus:border-green-500 bg-gray-50 focus:bg-white'}`;
+
+    return (
+        <div
+            onClick={() => setShowUserLogin(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+            <div
+                onClick={e => e.stopPropagation()}
+                className="relative w-full max-w-[820px] rounded-3xl overflow-hidden shadow-2xl flex"
+                style={{ minHeight: '500px' }}
+            >
+                {/* ── Left Brand Panel ── */}
+                <div className="hidden md:flex flex-col justify-between w-[42%] bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600 p-10 text-white relative overflow-hidden">
+                    <div className="absolute -top-14 -left-14 w-44 h-44 bg-white/10 rounded-full" />
+                    <div className="absolute -bottom-10 right-0 w-36 h-36 bg-white/10 rounded-full" />
+
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-8">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                                <span className="text-xl">🛒</span>
+                            </div>
+                            <span className="text-xl font-black tracking-tight">GloseryShop</span>
+                        </div>
+                        <h2 className="text-3xl font-extrabold leading-snug mb-3 whitespace-pre-line">
+                            {state === 'login' ? 'Welcome\nback! 👋' : 'Join us\ntoday! 🎉'}
+                        </h2>
+                        <p className="text-white/80 text-sm leading-relaxed">
+                            {state === 'login'
+                                ? 'Sign in to access your account and enjoy fresh groceries.'
+                                : 'Create your account and start enjoying fresh deliveries.'}
+                        </p>
+                    </div>
+
+                    <div className="relative z-10 space-y-3">
+                        {['Fresh groceries delivered daily', 'Track your orders live', 'Exclusive member deals & offers'].map((f, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 text-[10px] font-bold">✓</div>
+                                <p className="text-sm text-white/90">{f}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            )}
-            <div className="w-full ">
-                <p>Email</p>
-                <input onChange={(e) => setEmail(e.target.value)} value={email} placeholder="type here" className="border border-gray-200 rounded w-full p-2 mt-1 outline-primary" type="email" required />
-            </div>
-            <div className="w-full ">
-                <p>Password</p>
-                <input onChange={(e) => setPassword(e.target.value)} value={password} placeholder="type here" className="border border-gray-200 rounded w-full p-2 mt-1 outline-primary" type="password" required />
-            </div>
-            {state === "register" ? (
-                <p>
-                    Already have account? <span onClick={() => setState("login")} className="text-primary cursor-pointer">click here</span>
-                </p>
-            ) : (
-                <p>
-                    Create an account? <span onClick={() => setState("register")} className="text-primary cursor-pointer">click here</span>
-                </p>
-            )}
-            <button className="bg-primary hover:bg-primary-dull transition-all text-white w-full py-2 rounded-md cursor-pointer">
-                {state === "register" ? "Create Account" : "Login"}
-            </button>
-        </form>
-    </div>
-  )
-}
 
-export default Login
+                {/* ── Right Form Panel ── */}
+                <div className="flex-1 bg-white p-8 md:p-10 flex flex-col justify-center overflow-y-auto">
+                    {/* Close */}
+                    <button
+                        onClick={() => setShowUserLogin(false)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all z-10"
+                    >✕</button>
+
+                    <div className="mb-6">
+                        <h1 className="text-2xl font-bold text-gray-800">
+                            {state === 'login' ? 'Sign in to your account' : 'Create your account'}
+                        </h1>
+                        <p className="text-gray-400 text-sm mt-1.5">
+                            {state === 'login' ? "Don't have an account? " : 'Already have an account? '}
+                            <button
+                                onClick={() => switchState(state === 'login' ? 'register' : 'login')}
+                                className="text-green-600 font-bold hover:text-green-700 transition-colors"
+                            >
+                                {state === 'login' ? 'Create one' : 'Sign in'}
+                            </button>
+                        </p>
+                    </div>
+
+                    {/* Google Button */}
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        disabled={googleLoading || loading}
+                        className="w-full flex items-center justify-center gap-3 py-3 px-4 border-2 border-gray-200 rounded-2xl font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-5 group"
+                    >
+                        {googleLoading
+                            ? <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                            : <GoogleIcon />
+                        }
+                        <span className="text-sm">{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+                    </button>
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className="flex-1 h-px bg-gray-100" />
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wide">or</span>
+                        <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+
+                    {/* Email/Password Form */}
+                    <form onSubmit={onSubmitHandler} noValidate className="space-y-4">
+                        {state === 'register' && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1.5">Full Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="John Doe"
+                                    value={name}
+                                    autoComplete="name"
+                                    onChange={e => { setName(e.target.value); setErrors(p => ({ ...p, name: '' })); }}
+                                    className={inp(errors.name)}
+                                />
+                                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1.5">Email Address</label>
+                            <input
+                                type="email"
+                                placeholder="you@example.com"
+                                value={email}
+                                autoComplete="email"
+                                onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: '' })); }}
+                                className={inp(errors.email)}
+                            />
+                            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1.5">Password</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder={state === 'register' ? 'Minimum 6 characters' : 'Enter your password'}
+                                    value={password}
+                                    autoComplete={state === 'register' ? 'new-password' : 'current-password'}
+                                    onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })); }}
+                                    className={inp(errors.password) + ' pr-12'}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                    tabIndex={-1}
+                                >
+                                    <EyeIcon open={showPassword} />
+                                </button>
+                            </div>
+                            {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading || googleLoading}
+                            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 active:scale-95 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-green-100 hover:shadow-green-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {loading ? (
+                                <>
+                                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <span>{state === 'register' ? 'Creating account...' : 'Signing in...'}</span>
+                                </>
+                            ) : (
+                                <span>{state === 'register' ? '🎉 Create Account' : '🚀 Sign In'}</span>
+                            )}
+                        </button>
+                    </form>
+
+                    <p className="text-center text-xs text-gray-300 mt-5">
+                        By continuing, you agree to our{' '}
+                        <span className="text-green-500 cursor-pointer hover:underline">Terms</span>{' '}&{' '}
+                        <span className="text-green-500 cursor-pointer hover:underline">Privacy Policy</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Login;

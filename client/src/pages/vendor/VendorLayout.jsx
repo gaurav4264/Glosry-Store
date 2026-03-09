@@ -7,6 +7,7 @@ const VendorLayout = () => {
     const navigate = useNavigate();
     const [vendor, setVendor] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [lowStockCount, setLowStockCount] = useState(0);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -14,6 +15,7 @@ const VendorLayout = () => {
                 const { data } = await axios.get('/api/seller/vendor-is-auth');
                 if (data.success) {
                     setVendor(data.seller);
+                    fetchLowStock();
                 } else {
                     toast.error('Please login as a seller');
                     navigate('/seller-vendor-login');
@@ -24,6 +26,23 @@ const VendorLayout = () => {
         };
         checkAuth();
     }, []);
+
+    const fetchLowStock = async () => {
+        try {
+            const { data } = await axios.get('/api/seller/vendor-low-stock');
+            if (data.success) {
+                setLowStockCount(data.count);
+                if (data.count > 0) {
+                    toast.error(`⚠️ Alert: ${data.count} product(s) are low on stock!`, {
+                        duration: 5000,
+                        position: 'top-right',
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching low stock:', error);
+        }
+    };
 
     const logout = async () => {
         try {
@@ -40,7 +59,7 @@ const VendorLayout = () => {
     const navLinks = [
         { name: 'Dashboard', path: '/vendor', icon: '📊' },
         { name: 'Add Product', path: '/vendor/add-product', icon: '➕' },
-        { name: 'My Products', path: '/vendor/products', icon: '📦' },
+        { name: 'My Products', path: '/vendor/products', icon: '📦', badge: lowStockCount },
         { name: 'Orders', path: '/vendor/orders', icon: '🛒' },
         { name: 'Reviews', path: '/vendor/reviews', icon: '⭐' },
         { name: 'Shop Profile', path: '/vendor/profile', icon: '🏪' },
@@ -69,14 +88,24 @@ const VendorLayout = () => {
                             to={link.path}
                             end={link.path === '/vendor'}
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium ${isActive
+                                `flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-sm font-medium ${isActive
                                     ? 'bg-white/20 text-white shadow-sm'
                                     : 'text-indigo-200 hover:bg-white/10 hover:text-white'
                                 }`
                             }
                         >
-                            <span className="text-lg flex-shrink-0">{link.icon}</span>
-                            {sidebarOpen && <span className="truncate">{link.name}</span>}
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <span className="text-lg flex-shrink-0">{link.icon}</span>
+                                {sidebarOpen && <span className="truncate">{link.name}</span>}
+                            </div>
+                            {link.badge > 0 && sidebarOpen && (
+                                <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                                    {link.badge}
+                                </span>
+                            )}
+                            {link.badge > 0 && !sidebarOpen && (
+                                <span className="absolute ml-5 -mt-3 w-2.5 h-2.5 bg-red-500 rounded-full animate-bounce"></span>
+                            )}
                         </NavLink>
                     ))}
                 </nav>

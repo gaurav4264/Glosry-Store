@@ -5,11 +5,11 @@ import Product from '../models/Product.js';
 // POST /api/health/save
 export const saveHealthProfile = async (req, res) => {
     try {
-        const { userId, age, gender, conditions, allergies, notes } = req.body;
+        const { userId, name, age, gender, height, weight, conditions, allergies, notes } = req.body;
 
         const profile = await HealthProfile.findOneAndUpdate(
             { userId },
-            { userId, age, gender, conditions, allergies, notes },
+            { userId, name, age, gender, height, weight, conditions, allergies, notes },
             { upsert: true, new: true, runValidators: true }
         );
 
@@ -52,16 +52,18 @@ export const getHealthRecommendations = async (req, res) => {
             return res.json({ success: false, message: 'No products available in store.' });
         }
 
-        const { age, gender, conditions = [], allergies = [], notes } = profile;
+        const { name, age, gender, height, weight, conditions = [], allergies = [], notes } = profile;
 
         // Build concise product list for AI prompt
         const productList = allProducts.map(p => `${p.name} (${p.category})`).join(', ');
 
         const prompt = `You are a clinical nutritionist and healthcare advisor for a grocery store called SabziKart.
 
-A user has the following health profile:
-- Age: ${age || 'Not specified'}
+A user named ${name || 'the patient'} has the following health profile:
+- Age: ${age || 'Not specified'} years
 - Gender: ${gender || 'Not specified'}
+- Height: ${height ? height + ' cm' : 'Not specified'}
+- Weight: ${weight ? weight + ' kg' : 'Not specified'}
 - Health Conditions: ${conditions.length > 0 ? conditions.join(', ') : 'None'}
 - Allergies: ${allergies.length > 0 ? allergies.join(', ') : 'None'}
 - Additional Notes: ${notes || 'None'}

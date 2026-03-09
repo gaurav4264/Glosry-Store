@@ -31,6 +31,7 @@ import AboutUs from './pages/AboutUs';
 import RefundPolicy from './pages/RefundPolicy';
 import UserComplaint from './pages/UserComplaint';
 import HealthProfile from './pages/HealthProfile';
+import ScanList from './pages/ScanList';
 
 // Seller Pages
 // Seller Pages (Lazy Loaded)
@@ -101,6 +102,7 @@ const App = () => {
           <Route path='/contact' element={<Contact />} />
           <Route path='/smart-pantry' element={<SmartPantry />} />
           <Route path='/budget-bag' element={<BudgetBag />} />
+          <Route path='/smart-list' element={<ScanList />} />
           <Route path='/checkout' element={<Checkout />} />
           <Route path='/profile' element={<UserProfile />} />
           <Route path='/privacy' element={<PrivacyPolicy />} />

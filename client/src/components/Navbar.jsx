@@ -1,12 +1,19 @@
-import React, { useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
-import { assets } from '../assets/assets'
-import { useAppContext } from '../context/AppContext'
-import toast from 'react-hot-toast'
+import React, { useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
+import { assets } from '../assets/assets';
+import { useAppContext } from '../context/AppContext';
+import toast from 'react-hot-toast';
+import VoiceSearchModal from './VoiceSearchModal';
 
 const Navbar = () => {
   const [open, setOpen] = React.useState(false)
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = React.useState(false);
   const { user, setUser, setShowUserLogin, navigate, setSearchQuery, searchQuery, getCartCount, axios } = useAppContext();
+
+  const handleVoiceSearch = (transcript) => {
+    setSearchQuery(transcript);
+    navigate("/products");
+  };
 
   const logout = async () => {
     try {
@@ -63,6 +70,10 @@ const Navbar = () => {
               <span className='text-lg w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center'>🩺</span>
               <div><p className='font-medium text-gray-800'>Health Advisor</p><p className='text-[11px] text-gray-400'>AI grocery picks for your health</p></div>
             </div>
+            <div onClick={() => navigate('/smart-list')} className='px-4 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center gap-3 transition-colors duration-200'>
+              <span className='text-lg w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center'>📝</span>
+              <div><p className='font-medium text-gray-800'>Scan List</p><p className='text-[11px] text-gray-400'>Upload handwritten lists</p></div>
+            </div>
             <div onClick={() => navigate('/complaint')} className='px-4 py-2.5 hover:bg-red-50 cursor-pointer flex items-center gap-3 transition-colors duration-200'>
               <span className='text-lg w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center'>📢</span>
               <div><p className='font-medium text-gray-800'>Raise Complaint</p><p className='text-[11px] text-gray-400'>We are here to help</p></div>
@@ -70,26 +81,32 @@ const Navbar = () => {
           </div>
         </div>
 
-        <div className="hidden lg:flex items-center text-sm gap-2 border border-gray-300 px-3 rounded-full">
-          <input onChange={(e) => setSearchQuery(e.target.value)} className="py-1.5 w-full bg-transparent outline-none placeholder-gray-500" type="text" placeholder="Search products" />
-          <img src={assets.search_icon} alt='search' className='w-4 h-4' />
+        {/* Desktop & Tablet Search Bar */}
+        <div className="hidden md:flex items-center text-sm gap-2 border border-gray-300 px-3 py-1.5 rounded-full min-w-[200px] lg:min-w-[250px] bg-gray-50/50">
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="py-1 w-full bg-transparent outline-none placeholder-gray-500" type="text" placeholder="Search products" />
+          <button onClick={() => setIsVoiceModalOpen(true)} title="Voice Search" type="button" className="p-1 rounded-full transition-colors flex items-center justify-center hover:bg-gray-200 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+            </svg>
+          </button>
+          <img src={assets.search_icon} alt='search' className='w-4 h-4 opacity-70 cursor-pointer' onClick={() => { if (searchQuery) navigate("/products") }} />
         </div>
 
-        <div onClick={() => navigate("/wishlist")} className="relative cursor-pointer" title="Wishlist">
+        <div onClick={() => navigate("/wishlist")} className="relative cursor-pointer hidden sm:block" title="Wishlist">
           <span className="text-2xl">💖</span>
         </div>
 
-        <div onClick={() => navigate("/cart")} className="relative cursor-pointer">
+        <div onClick={() => navigate("/cart")} className="relative cursor-pointer hidden md:block">
           <img src={assets.nav_cart_icon} alt='cart' className='w-6 opacity-80' />
           <button className="absolute -top-2 -right-3 text-xs text-white bg-primary w-[18px] h-[18px] rounded-full">{getCartCount()}</button>
         </div>
 
-        {!user ? (<button onClick={() => setShowUserLogin(true)} className="cursor-pointer px-8 py-2 bg-primary hover:bg-primary-dull transition text-white rounded-full">
+        {!user ? (<button onClick={() => setShowUserLogin(true)} className="cursor-pointer px-6 py-2 bg-primary hover:bg-primary-dull transition text-white rounded-full whitespace-nowrap hidden sm:block">
           Login
         </button>)
           :
           (
-            <div className='relative group'>
+            <div className='relative group hidden sm:block'>
               {user.profilePhoto ? (
                 <img src={user.profilePhoto} className='w-10 h-10 rounded-full object-cover border-2 border-primary/30 cursor-pointer' alt="profile" />
               ) : (
@@ -106,19 +123,32 @@ const Navbar = () => {
           )}
       </div>
 
-      <div className='flex items-center gap-6 sm:hidden'>
+      {/* Hamburger & Cart Mobile Menu */}
+      <div className='flex items-center gap-6 md:hidden'>
         <div onClick={() => navigate("/cart")} className="relative cursor-pointer">
           <img src={assets.nav_cart_icon} alt='cart' className='w-6 opacity-80' />
           <button className="absolute -top-2 -right-3 text-xs text-white bg-primary w-[18px] h-[18px] rounded-full">{getCartCount()}</button>
         </div>
-        <button onClick={() => open ? setOpen(false) : setOpen(true)} aria-label="Menu" className="">
+        <button onClick={() => setOpen(!open)} aria-label="Menu" className="">
           <img src={assets.menu_icon} alt='menu' />
         </button>
       </div>
 
 
       {open && (
-        <div className={`${open ? 'flex' : 'hidden'} absolute top-[60px] left-0 w-full bg-white shadow-md py-4 flex-col items-start gap-2 px-5 text-sm md:hidden`}>
+        <div className={`${open ? 'flex' : 'hidden'} absolute top-[60px] left-0 w-full bg-white shadow-md py-4 flex-col items-start gap-2 px-5 text-sm md:hidden z-50`}>
+
+          {/* Mobile Search Bar */}
+          <div className="flex items-center w-full text-sm gap-2 border border-gray-300 px-3 py-1.5 rounded-full bg-gray-50 mb-4">
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="py-1 w-full bg-transparent outline-none placeholder-gray-500" type="text" placeholder="Search products" />
+            <button onClick={() => { setIsVoiceModalOpen(true); setOpen(false); }} title="Voice Search" type="button" className="p-1 rounded-full text-primary hover:bg-gray-200">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+              </svg>
+            </button>
+            <img src={assets.search_icon} alt='search' className='w-4 h-4 opacity-70 cursor-pointer' onClick={() => { if (searchQuery) { navigate("/products"); setOpen(false); } }} />
+          </div>
+
           <NavLink to="/" onClick={() => setOpen(false)}>Home</NavLink>
           <NavLink to="/products" onClick={() => setOpen(false)}>All Product</NavLink>
           {user &&
@@ -130,6 +160,7 @@ const Navbar = () => {
               <NavLink to="/smart-pantry" onClick={() => setOpen(false)}>🥬 Smart Pantry</NavLink>
               <NavLink to="/budget-bag" onClick={() => setOpen(false)}>💰 Budget Bag</NavLink>
               <NavLink to="/health-profile" onClick={() => setOpen(false)}>🩺 Health Advisor</NavLink>
+              <NavLink to="/smart-list" onClick={() => setOpen(false)}>📝 Scan Grocery List</NavLink>
             </>
           }
           <NavLink to="/contact" onClick={() => setOpen(false)}>Contact</NavLink>
@@ -149,6 +180,12 @@ const Navbar = () => {
 
         </div>
       )}
+
+      <VoiceSearchModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onSearch={handleVoiceSearch}
+      />
 
     </nav>
   )

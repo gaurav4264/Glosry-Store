@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
+import ProductCard from '../components/ProductCard';
 
 const CONDITIONS = [
-    { id: 'Diabetes (Type 1 or 2)', icon: '🩸', color: 'from-red-400 to-rose-500' },
+    { id: 'Diabetes', icon: '🩸', color: 'from-red-400 to-rose-500' },
     { id: 'High Blood Pressure', icon: '💓', color: 'from-orange-400 to-red-500' },
     { id: 'Low Blood Pressure', icon: '💔', color: 'from-blue-400 to-indigo-500' },
     { id: 'Thyroid', icon: '🦋', color: 'from-purple-400 to-violet-500' },
@@ -23,15 +24,29 @@ const ALLERGIES = [
     { id: 'Soy', icon: '🫘' },
 ];
 
+const CURATED_CATEGORIES = [
+    { id: 'Diabetic Friendly', icon: '🩸', match: ['sugar free', 'diabetic', 'oats', 'quinoa', 'bitter gourd', 'jamun', 'brown rice', 'millets', 'apple'] },
+    { id: 'Heart Healthy', icon: '❤️', match: ['olive oil', 'walnut', 'almond', 'salmon', 'oats', 'berry', 'garlic', 'spinach', 'apple'] },
+    { id: 'High Protein', icon: '💪', match: ['paneer', 'egg', 'chicken', 'soya', 'dal', 'lens', 'protein', 'peanut', 'cheese'] },
+    { id: 'Gluten Free', icon: '🌾', match: ['gluten free', 'millet', 'rice', 'quinoa', 'corn', 'amaranth'] },
+    { id: 'Weight Loss', icon: '⚖️', match: ['green tea', 'apple cider', 'oats', 'makhana', 'salad', 'detox', 'chia', 'flax'] },
+    { id: 'Immunity Builder', icon: '🛡️', match: ['amla', 'honey', 'tulsi', 'ginger', 'turmeric', 'citrus', 'orange', 'lemon'] },
+    { id: 'Bone Health', icon: '🦴', match: ['milk', 'cheese', 'calcium', 'curd', 'almond', 'sesame', 'ragi'] },
+];
+
 const HealthProfile = () => {
     const { axios, user, navigate, addToCart, products } = useAppContext();
 
-    const [step, setStep] = useState('form'); // 'form' | 'results'
+    const [step, setStep] = useState('shop'); // 'form' | 'results' | 'shop'
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [selectedCurated, setSelectedCurated] = useState('Diabetic Friendly');
     const [form, setForm] = useState({
+        name: '',
         age: '',
         gender: '',
+        height: '',
+        weight: '',
         conditions: [],
         allergies: [],
         notes: '',
@@ -41,25 +56,33 @@ const HealthProfile = () => {
 
     // Load saved profile on mount
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            setLoading(false);
+            return;
+        }
         const loadProfile = async () => {
             try {
                 const { data } = await axios.get('/api/health/profile');
                 if (data.success && data.profile) {
                     const p = data.profile;
                     setForm({
+                        name: p.name || '',
                         age: p.age || '',
                         gender: p.gender || '',
+                        height: p.height || '',
+                        weight: p.weight || '',
                         conditions: p.conditions || [],
                         allergies: p.allergies || [],
                         notes: p.notes || '',
                     });
                 }
-            } catch (e) { console.log(e); }
+            } catch (e) {
+                console.log('Failed to load health profile:', e.message);
+            }
             finally { setLoading(false); }
         };
         loadProfile();
-    }, [user]);
+    }, [user, axios]);
 
     const toggleCondition = (id) => {
         setForm(prev => ({
@@ -81,8 +104,8 @@ const HealthProfile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.age || !form.gender) {
-            toast.error('Please enter your age and gender');
+        if (!form.name || !form.age || !form.gender) {
+            toast.error('Name, Age, and Gender are required fields.');
             return;
         }
         setSaving(true);
@@ -91,6 +114,7 @@ const HealthProfile = () => {
             const saveRes = await axios.post('/api/health/save', form);
             if (!saveRes.data.success) {
                 toast.error(saveRes.data.message);
+                setSaving(false);
                 return;
             }
 
@@ -109,106 +133,191 @@ const HealthProfile = () => {
             }
         } catch (err) {
             toast.dismiss('ai-loading');
-            toast.error(err.message);
+            toast.error(err.message || 'Analysis failed. Please try again.');
         } finally {
             setSaving(false);
         }
     };
 
     const handleAddToCart = (productName) => {
-        // Find product in products list
         const found = products.find(p =>
             p.name.toLowerCase().includes(productName.toLowerCase()) ||
             productName.toLowerCase().includes(p.name.toLowerCase())
         );
         if (found) {
             addToCart(found._id);
+            toast.success('Added to cart!');
         } else {
             toast.error('Product not found in store');
         }
     };
 
-    if (!user) return (
-        <div className="mt-20 text-center py-20">
-            <p className="text-6xl mb-4">🔒</p>
-            <p className="text-xl font-medium text-gray-600">Please login to access Health Advisor</p>
-            <button onClick={() => navigate('/')} className="mt-4 px-6 py-2 bg-primary text-white rounded-full">
-                Go Home
-            </button>
-        </div>
-    );
-
-    if (loading) return (
-        <div className="mt-20 text-center py-20">
-            <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-400">Loading your health profile...</p>
-        </div>
-    );
+    const curatedProducts = useMemo(() => {
+        if (!selectedCurated) return [];
+        const cat = CURATED_CATEGORIES.find(c => c.id === selectedCurated);
+        if (!cat) return [];
+        return products.filter(p => {
+            const searchString = `${p.name} ${p.category} ${p.description?.join(' ')}`.toLowerCase();
+            return cat.match.some(keyword => searchString.includes(keyword.toLowerCase()));
+        }).slice(0, 15); // Show top 15 matches
+    }, [selectedCurated, products]);
 
     return (
-        <div className="mt-16 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-16 pb-20">
 
             {/* ── Header ─────────────────────────────────────────── */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 p-8 mb-8">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 p-8 mb-8 shadow-lg">
                 <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/4"></div>
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                         <span className="text-4xl">🩺</span>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Health Advisor</h1>
-                            <p className="text-pink-100 text-sm">AI-Powered Grocery Recommendations for Patients & Senior Citizens</p>
+                            <h1 className="text-3xl font-bold text-white">Health & Wellness Hub</h1>
+                            <p className="text-teal-100 text-sm mt-1">Smart Groceries for Better Health</p>
                         </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-4">
-                        <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full font-medium">🫀 Heart-Friendly</span>
-                        <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full font-medium">🩸 Diabetes-Safe</span>
-                        <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full font-medium">💊 Doctor-Approved Diet Tips</span>
-                        <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full font-medium">🚫 Allergy Aware</span>
                     </div>
                 </div>
             </div>
 
-            {/* ── Step Tabs ──────────────────────────────────────── */}
-            <div className="flex gap-2 mb-8">
-                <button onClick={() => setStep('form')} className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${step === 'form' ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-                    📝 Health Profile
+            {/* ── Tabs / Sub Navigation ─────────────────────────── */}
+            <div className="flex gap-2 mb-8 bg-gray-50 p-1.5 rounded-xl inline-flex flex-wrap border border-gray-100">
+                <button
+                    onClick={() => setStep('shop')}
+                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${step === 'shop' ? 'bg-white text-teal-600 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    🛒 Shop by Health Goal
                 </button>
-                <button onClick={() => { if (recommendations) setStep('results'); }} className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${step === 'results' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg' : recommendations ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`}>
-                    🤖 AI Recommendations
+                <button
+                    onClick={() => {
+                        if (!user) {
+                            toast.error('Please login to use AI features');
+                            setTimeout(() => navigate('/'), 1000); // Redirect to login modal on home
+                            return;
+                        }
+                        setStep('form');
+                    }}
+                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${step === 'form' ? 'bg-white text-teal-600 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    🤖 AI Health Profile
                 </button>
+                {recommendations && (
+                    <button
+                        onClick={() => setStep('results')}
+                        className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 ${step === 'results' ? 'bg-white text-teal-600 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        ✅ My AI Plan
+                    </button>
+                )}
             </div>
+
+            {/* ═══════════════════════════════════════════════════ */}
+            {/* SHOP BY CATEGORY STEP                               */}
+            {/* ═══════════════════════════════════════════════════ */}
+            {step === 'shop' && (
+                <div className="mb-10 animate-in fade-in duration-500">
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                            Select Focus Area
+                        </h2>
+                        <div className="flex overflow-x-auto pb-4 gap-3 snap-x hide-scrollbar">
+                            {CURATED_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setSelectedCurated(cat.id)}
+                                    className={`snap-start flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl font-bold text-sm transition-all border-2 ${selectedCurated === cat.id
+                                        ? 'bg-teal-50 border-teal-500 text-teal-700 shadow-sm'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:border-teal-300'
+                                        }`}
+                                >
+                                    <span className="text-xl">{cat.icon}</span>
+                                    <span>{cat.id}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-50/50 rounded-3xl p-6 border border-gray-100">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-gray-800">
+                                Best picks for <span className="text-teal-600">{selectedCurated}</span>
+                            </h3>
+                            <span className="text-xs font-bold bg-white px-3 py-1 rounded-full border border-gray-200 text-gray-500">
+                                {curatedProducts.length} Items Found
+                            </span>
+                        </div>
+                        {curatedProducts.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                {curatedProducts.map(product => (
+                                    <ProductCard key={product._id} product={product} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                                <p className="text-5xl mb-3">🔍</p>
+                                <p className="text-gray-500 font-bold text-lg">No products found matching this goal yet.</p>
+                                <p className="text-gray-400 text-sm mt-1">Try selecting another health category above.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ═══════════════════════════════════════════════════ */}
             {/* FORM STEP                                          */}
             {/* ═══════════════════════════════════════════════════ */}
             {step === 'form' && (
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-500">
+                    <div className="bg-teal-50 border border-teal-100 p-4 rounded-2xl mb-6">
+                        <h3 className="font-bold text-teal-800 flex items-center gap-2">
+                            <span className="text-xl">🤖</span> AI Dietician
+                        </h3>
+                        <p className="text-teal-700 text-sm mt-1">
+                            Fill out your health profile below, and our AI will analyze your dietary needs to suggest exactly what you should eat (and avoid) from our store.
+                        </p>
+                    </div>
 
                     {/* Personal Info */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600">👤</span>
-                            Personal Information
-                        </h2>
+                        <div className="mb-5">
+                            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center text-teal-600">👤</span>
+                                Personal Information
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-1">Please provide accurate details for the best AI recommendations.</p>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-2">Age <span className="text-red-400">*</span></label>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-600 mb-2">Full Name <span className="text-red-400">*</span></label>
                                 <input
-                                    type="number" min="1" max="120"
-                                    value={form.age}
-                                    onChange={e => setForm({ ...form, age: e.target.value })}
-                                    placeholder="e.g. 65"
-                                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all text-gray-700"
+                                    type="text"
+                                    value={form.name}
+                                    onChange={e => setForm({ ...form, name: e.target.value })}
+                                    placeholder="Enter your full name"
+                                    className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl px-4 py-3 focus:outline-none focus:border-teal-400 focus:bg-white transition-all text-sm font-medium"
                                     required
                                 />
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-2">Gender <span className="text-red-400">*</span></label>
+                                <label className="block text-sm font-bold text-gray-600 mb-2">Age <span className="text-red-400">*</span></label>
+                                <input
+                                    type="number" min="1" max="150"
+                                    value={form.age}
+                                    onChange={e => setForm({ ...form, age: e.target.value })}
+                                    placeholder="e.g. 35"
+                                    className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl px-4 py-3 focus:outline-none focus:border-teal-400 focus:bg-white transition-all text-sm font-medium"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-2">Gender <span className="text-red-400">*</span></label>
                                 <select
                                     value={form.gender}
                                     onChange={e => setForm({ ...form, gender: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all text-gray-700"
+                                    className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl px-4 py-3 focus:outline-none focus:border-teal-400 focus:bg-white transition-all text-sm font-medium"
                                     required
                                 >
                                     <option value="">Select gender</option>
@@ -217,16 +326,39 @@ const HealthProfile = () => {
                                     <option value="other">Other</option>
                                 </select>
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-2">Height (cm)</label>
+                                <input
+                                    type="number" min="50" max="300"
+                                    value={form.height}
+                                    onChange={e => setForm({ ...form, height: e.target.value })}
+                                    placeholder="e.g. 175"
+                                    className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl px-4 py-3 focus:outline-none focus:border-teal-400 focus:bg-white transition-all text-sm font-medium"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-2">Weight (kg)</label>
+                                <input
+                                    type="number" step="0.1" min="10" max="300"
+                                    value={form.weight}
+                                    onChange={e => setForm({ ...form, weight: e.target.value })}
+                                    placeholder="e.g. 70"
+                                    className="w-full border-2 border-gray-100 bg-gray-50 rounded-xl px-4 py-3 focus:outline-none focus:border-teal-400 focus:bg-white transition-all text-sm font-medium"
+                                />
+                            </div>
                         </div>
                     </div>
 
                     {/* Health Conditions */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600">💊</span>
-                            Health Conditions
-                        </h2>
-                        <p className="text-sm text-gray-400 mb-5">Select all conditions that apply to you</p>
+                        <div className="mb-5">
+                            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600">🩺</span>
+                                Medical Conditions
+                            </h2>
+                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                             {CONDITIONS.map(c => {
                                 const selected = form.conditions.includes(c.id);
@@ -235,16 +367,16 @@ const HealthProfile = () => {
                                         key={c.id}
                                         type="button"
                                         onClick={() => toggleCondition(c.id)}
-                                        className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-300 hover:scale-105 ${selected
-                                            ? `border-transparent bg-gradient-to-br ${c.color} text-white shadow-lg scale-105`
-                                            : 'border-gray-100 bg-gray-50 hover:bg-gray-100 text-gray-600'
+                                        className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${selected
+                                            ? `border-transparent bg-gradient-to-br ${c.color} text-white shadow-md scale-105`
+                                            : 'border-gray-100 bg-gray-50 hover:bg-white hover:border-teal-300 text-gray-600'
                                             }`}
                                     >
                                         {selected && (
                                             <span className="absolute top-2 right-2 w-4 h-4 bg-white/30 rounded-full flex items-center justify-center text-[10px]">✓</span>
                                         )}
                                         <span className="text-2xl">{c.icon}</span>
-                                        <span className="text-xs font-semibold text-center leading-tight">{c.id}</span>
+                                        <span className="text-xs font-bold text-center leading-tight">{c.id}</span>
                                     </button>
                                 );
                             })}
@@ -253,11 +385,12 @@ const HealthProfile = () => {
 
                     {/* Allergies */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">⚠️</span>
-                            Food Allergies
-                        </h2>
-                        <p className="text-sm text-gray-400 mb-5">Select any foods you are allergic to</p>
+                        <div className="mb-5">
+                            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">⚠️</span>
+                                Food Allergies
+                            </h2>
+                        </div>
                         <div className="flex flex-wrap gap-3">
                             {ALLERGIES.map(a => {
                                 const selected = form.allergies.includes(a.id);
@@ -266,9 +399,9 @@ const HealthProfile = () => {
                                         key={a.id}
                                         type="button"
                                         onClick={() => toggleAllergy(a.id)}
-                                        className={`flex items-center gap-2 px-5 py-3 rounded-full border-2 transition-all duration-300 font-medium text-sm ${selected
-                                            ? 'border-amber-400 bg-amber-50 text-amber-700 shadow-md scale-105'
-                                            : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all duration-200 font-bold text-sm ${selected
+                                            ? 'border-amber-400 bg-amber-50 text-amber-700 shadow-sm scale-105'
+                                            : 'border-gray-100 bg-gray-50 text-gray-600 hover:bg-white hover:border-amber-300'
                                             }`}
                                     >
                                         <span>{a.icon}</span>
@@ -282,16 +415,16 @@ const HealthProfile = () => {
 
                     {/* Additional Notes */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+                        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">📝</span>
-                            Additional Notes
+                            Specific Diet or Notes
                         </h2>
                         <textarea
                             value={form.notes}
                             onChange={e => setForm({ ...form, notes: e.target.value })}
                             rows={3}
-                            placeholder="Any other health details, medications, or dietary restrictions..."
-                            className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-700 resize-none"
+                            placeholder="Example: I'm on a Keto diet, or I need low-sodium items..."
+                            className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-teal-400 bg-gray-50 focus:bg-white transition-all text-sm resize-none"
                         />
                     </div>
 
@@ -299,30 +432,37 @@ const HealthProfile = () => {
                     <button
                         type="submit"
                         disabled={saving}
-                        className="w-full py-4 rounded-2xl font-bold text-white text-lg bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-3"
+                        className="w-full py-4 rounded-2xl font-bold text-white text-lg bg-teal-600 hover:bg-teal-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                     >
                         {saving ? (
                             <>
-                                <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-                                Analysing with AI...
+                                <span className="w-6 h-6 border-2 border-teal-300 border-t-white rounded-full animate-spin"></span>
+                                Generating AI Plan...
                             </>
                         ) : (
-                            <>🤖 Save & Get AI Recommendations</>
+                            <>🪄 Generate AI Diet & Grocery Plan</>
                         )}
                     </button>
                 </form>
             )}
 
             {/* ═══════════════════════════════════════════════════ */}
-            {/* RESULTS STEP                                        */}
+            {/* AI RESULTS STEP                                    */}
             {/* ═══════════════════════════════════════════════════ */}
             {step === 'results' && recommendations && (
-                <div className="space-y-8">
+                <div className="space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-500">
 
                     {/* Profile Summary Badge */}
                     <div className="flex flex-wrap gap-2 items-center bg-gradient-to-r from-slate-50 to-gray-50 border border-gray-200 rounded-2xl p-5">
                         <span className="text-sm font-bold text-gray-700 mr-2">Your Profile:</span>
-                        <span className="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-medium">👤 Age {form.age}, {form.gender}</span>
+                        <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-teal-200">
+                            👤 {form.name || 'User'} ({form.age}y, {form.gender})
+                        </span>
+                        {(form.height || form.weight) && (
+                            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-100">
+                                📏 {form.height ? `${form.height}cm` : ''} {form.height && form.weight ? '|' : ''} {form.weight ? `${form.weight}kg` : ''}
+                            </span>
+                        )}
                         {form.conditions.map(c => (
                             <span key={c} className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">{c}</span>
                         ))}
@@ -334,116 +474,102 @@ const HealthProfile = () => {
                         </button>
                     </div>
 
-                    {/* ── Health Tips ──────────────────────────────── */}
+                    {/* Tips */}
                     {recommendations.tips && recommendations.tips.length > 0 && (
-                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-6">
-                            <h3 className="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
-                                <span className="text-2xl">💡</span> Personalised Health Tips
-                            </h3>
-                            <div className="space-y-2">
+                        <div className="bg-white border-2 border-indigo-50 rounded-2xl overflow-hidden shadow-sm">
+                            <div className="bg-indigo-50 px-6 py-4 flex items-center gap-3">
+                                <span className="text-2xl">👨‍⚕️</span>
+                                <h3 className="text-lg font-bold text-indigo-900">Dr. AI's Diet Rules</h3>
+                            </div>
+                            <div className="p-6 space-y-3">
                                 {recommendations.tips.map((tip, idx) => (
-                                    <div key={idx} className="flex items-start gap-3 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-3 border border-blue-100/50">
-                                        <span className="text-blue-500 font-bold text-sm mt-0.5">{idx + 1}.</span>
-                                        <p className="text-blue-700 text-sm font-medium">{tip}</p>
+                                    <div key={idx} className="flex gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                                        <span className="flex-shrink-0 w-8 h-8 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-sm">
+                                            {idx + 1}
+                                        </span>
+                                        <p className="text-gray-700 text-sm font-medium pt-1.5">{tip}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* ── Recommended Groceries ─────────────────────── */}
+                    {/* Recommended Items */}
                     <div>
                         <div className="flex items-center gap-3 mb-5">
-                            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-xl">✅</div>
+                            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-2xl">✅</div>
                             <div>
-                                <h3 className="text-xl font-bold text-gray-800">Recommended for You</h3>
-                                <p className="text-sm text-gray-400">These items are beneficial for your health conditions</p>
+                                <h3 className="text-2xl font-extrabold text-gray-800">Eat More of These</h3>
+                                <p className="text-sm text-gray-500 font-medium">Grocery staples highly recommended for your profile.</p>
                             </div>
                         </div>
                         {recommendations.recommended && recommendations.recommended.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                                 {recommendations.recommended.map((item, idx) => {
                                     const product = item.product;
                                     return (
-                                        <div key={idx} className="bg-white border border-emerald-100 rounded-2xl p-4 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-                                            {product && product.image && product.image[0] ? (
-                                                <img src={product.image[0]} alt={product.name} className="w-full h-32 object-contain rounded-xl mb-3 bg-gray-50" />
+                                        <div key={idx} className="bg-white border-2 border-emerald-50 rounded-3xl p-5 hover:border-emerald-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full bg-gradient-to-b from-white to-emerald-50/30">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <h4 className="font-bold text-emerald-900 text-lg leading-tight pr-4">{item.name}</h4>
+                                                <span className="bg-emerald-100 text-emerald-700 font-black text-[10px] uppercase tracking-wider px-2 py-1 rounded-md shrink-0">SUPERFOOD</span>
+                                            </div>
+
+                                            <p className="text-sm text-gray-600 mb-6 flex-1 font-medium bg-white/50 rounded-xl p-3">{item.reason}</p>
+
+                                            {product ? (
+                                                <div className="mt-auto">
+                                                    <div className="flex pb-4 gap-3 items-center">
+                                                        <img src={product.image?.[0] || 'https://placehold.co/60'} alt={product.name} className="w-14 h-14 rounded-xl object-cover bg-white border border-gray-100 shadow-sm" />
+                                                        <div>
+                                                            <p className="font-bold text-sm text-gray-800 line-clamp-1">{product.name}</p>
+                                                            <p className="text-emerald-600 font-black text-sm">₹{product.offerPrice}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => handleAddToCart(product.name)} className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-emerald-600 transition-colors shadow-md flex items-center justify-center gap-2">
+                                                        <span className="text-lg">🛒</span> Add to Cart
+                                                    </button>
+                                                </div>
                                             ) : (
-                                                <div className="w-full h-32 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl mb-3 flex items-center justify-center text-5xl">🛒</div>
+                                                <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                                                    <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-md">NOT IN STORE</span>
+                                                    <span className="text-sm">🥦</span>
+                                                </div>
                                             )}
-                                            <span className="absolute top-4 right-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">✓ GOOD</span>
-                                            <h4 className="font-bold text-gray-800 text-sm leading-tight mb-1">{item.name}</h4>
-                                            {product && (
-                                                <p className="text-emerald-600 font-bold text-sm mb-2">₹{product.offerPrice}</p>
-                                            )}
-                                            <p className="text-xs text-gray-500 mb-3 leading-relaxed">{item.reason}</p>
-                                            <button
-                                                onClick={() => handleAddToCart(item.name)}
-                                                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs py-2.5 rounded-xl font-semibold hover:shadow-md hover:scale-[1.02] transition-all duration-300"
-                                            >
-                                                🛒 Add to Cart
-                                            </button>
                                         </div>
                                     );
                                 })}
                             </div>
                         ) : (
-                            <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-2xl">
-                                <p className="text-4xl mb-2">🥬</p>
-                                <p>No specific product recommendations found. Add your health conditions to see personalised picks.</p>
+                            <div className="text-center py-10 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                                <p className="text-gray-400 font-medium">No specific recommendations yet. Update your conditions.</p>
                             </div>
                         )}
                     </div>
 
-                    {/* ── Items to Avoid ────────────────────────────── */}
+                    {/* Avoid Items */}
                     {recommendations.avoid && recommendations.avoid.length > 0 && (
-                        <div>
+                        <div className="pt-6">
                             <div className="flex items-center gap-3 mb-5">
-                                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-xl">🚫</div>
+                                <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-2xl">🚫</div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-800">Items to Avoid</h3>
-                                    <p className="text-sm text-gray-400">These items may be harmful based on your health conditions</p>
+                                    <h3 className="text-2xl font-extrabold text-gray-800">Strictly Avoid</h3>
+                                    <p className="text-sm text-gray-500 font-medium">These degrade your health based on your profile.</p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {recommendations.avoid.map((item, idx) => {
-                                    const product = item.product;
-                                    return (
-                                        <div key={idx} className="bg-white border border-red-100 rounded-2xl p-4 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-rose-500"></div>
-                                            {product && product.image && product.image[0] ? (
-                                                <div className="relative w-full h-32 mb-3">
-                                                    <img src={product.image[0]} alt={product.name} className="w-full h-full object-contain rounded-xl bg-gray-50 opacity-50 grayscale" />
-                                                    <div className="absolute inset-0 flex items-center justify-center">
-                                                        <span className="text-5xl">🚫</span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="w-full h-32 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl mb-3 flex items-center justify-center text-5xl">🚫</div>
-                                            )}
-                                            <span className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVOID</span>
-                                            <h4 className="font-bold text-gray-700 text-sm leading-tight mb-1">{item.name}</h4>
-                                            <p className="text-xs text-red-500 leading-relaxed">{item.reason}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {recommendations.avoid.map((item, idx) => (
+                                    <div key={idx} className="bg-white border border-rose-100 rounded-2xl p-4 flex gap-4 items-start shadow-sm mix-blend-multiply relative overflow-hidden">
+                                        <div className="absolute right-0 top-0 bottom-0 w-24 bg-rose-50/50 -skew-x-12 translate-x-10 pointer-events-none"></div>
+                                        <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 flex-shrink-0 font-bold border border-rose-100">✕</div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-800 text-base mb-1">{item.name}</h4>
+                                            <p className="text-xs text-rose-600 font-medium">{item.reason}</p>
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
-
-                    {/* CTA */}
-                    <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6 text-center">
-                        <p className="text-gray-600 text-sm mb-4">These recommendations are based on common dietary guidelines. Always consult your doctor before making major dietary changes.</p>
-                        <div className="flex gap-3 justify-center flex-wrap">
-                            <button onClick={() => navigate('/products')} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transition-all">
-                                🛒 Shop Healthy Now
-                            </button>
-                            <button onClick={() => setStep('form')} className="px-6 py-2.5 bg-white border border-rose-200 text-rose-600 rounded-xl font-semibold text-sm hover:bg-rose-50 transition-all">
-                                ✏️ Update Health Profile
-                            </button>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>

@@ -23,7 +23,6 @@ const AdminAllOrders = () => {
     const location = useLocation();
 
     const [orders, setOrders] = useState([]);
-    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [revenueStats, setRevenueStats] = useState(null);
 
@@ -50,7 +49,6 @@ const AdminAllOrders = () => {
             if (data.success) {
                 setOrders(data.orders);
                 setTotal(data.total);
-                setStats({ totalRevenue: data.totalRevenue, commission: data.commission });
             }
         } catch { toast.error('Failed to fetch orders'); }
         finally { setLoading(false); }

@@ -1,6 +1,6 @@
 import express from 'express';
 import { isSellerAuth, sellerLogin, sellerLogout } from '../controllers/sellerController.js';
-import { vendorLogin, isVendorAuth, vendorLogout, getVendorProducts, getVendorOrders, deleteVendorProduct, updateVendorOrderStatus, vendorAddProduct } from '../controllers/sellerApplicationController.js';
+import { vendorLogin, isVendorAuth, vendorLogout, getVendorProducts, getVendorOrders, deleteVendorProduct, updateVendorOrderStatus, vendorAddProduct, vendorLowStockAlerts } from '../controllers/sellerApplicationController.js';
 import authSeller from '../middlewares/authSeller.js';
 import authVendor from '../middlewares/authVendor.js';
 import { upload } from '../configs/multer.js';
@@ -21,6 +21,7 @@ sellerRouter.get('/vendor-logout', vendorLogout);
 sellerRouter.post('/vendor-add-product', upload.array('images'), authVendor, vendorAddProduct);
 sellerRouter.get('/vendor-products', authVendor, getVendorProducts);
 sellerRouter.post('/vendor-delete-product', authVendor, deleteVendorProduct);
+sellerRouter.get('/vendor-low-stock', authVendor, vendorLowStockAlerts);
 
 // Vendor order routes
 sellerRouter.get('/vendor-orders', authVendor, getVendorOrders);

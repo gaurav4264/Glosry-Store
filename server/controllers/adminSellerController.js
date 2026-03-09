@@ -97,7 +97,7 @@ export const getVendorProductsAdmin = async (req, res) => {
 // Get All Orders (Admin) : GET /api/admin/all-orders
 export const getAllOrdersAdmin = async (req, res) => {
     try {
-        const { city, sellerId, startDate, endDate, status, page = 1, limit = 30 } = req.query;
+        const { city, sellerId, startDate, endDate, status, shopCategory, page = 1, limit = 30 } = req.query;
 
         // Build order filter
         const orderFilter = {};
