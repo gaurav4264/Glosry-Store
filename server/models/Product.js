@@ -27,6 +27,7 @@ const productSchema = new mongoose.Schema({
     vendorShopName: { type: String, default: null },  // for display
     manufacturingDate: { type: Date, default: null },
     expiryDate: { type: Date, default: null },
+    barcode: { type: String, default: null },
 }, { timestamps: true })
 
 const Product = mongoose.models.product || mongoose.model('product', productSchema)

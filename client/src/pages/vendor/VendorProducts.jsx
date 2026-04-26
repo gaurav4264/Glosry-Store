@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { categories } from '../../assets/assets';
 
 const VendorProducts = () => {
     const { vendor } = useOutletContext() || {};
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterCategory, setFilterCategory] = useState('all');
@@ -119,39 +120,67 @@ const VendorProducts = () => {
                     <a href="/vendor/add-product" className="inline-block mt-3 text-indigo-500 text-sm hover:underline">Add your first product →</a>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filtered.map(product => (
-                        <div key={product._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex gap-4 hover:shadow-md transition group">
-                            <img
-                                src={product.image?.[0] || 'https://placehold.co/80x80?text=?'}
-                                alt={product.name}
-                                className="w-20 h-20 rounded-xl object-cover border border-gray-100 flex-shrink-0"
-                                onError={e => e.target.src = 'https://placehold.co/80x80?text=?'}
-                            />
-                            <div className="flex-1 min-w-0">
-                                <p className="font-bold text-gray-800 truncate">{product.name}</p>
-                                <p className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block mt-1 font-medium">{product.category}</p>
-                                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                    <span className="font-bold text-indigo-600">₹{product.offerPrice}</span>
-                                    <span className="text-xs text-gray-400 line-through">₹{product.price}</span>
+                        <div key={product._id} className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col overflow-hidden">
+
+                            {/* Product Image Area */}
+                            <div className="relative h-48 bg-gray-50/50 flex items-center justify-center p-6 border-b border-gray-50">
+                                <img
+                                    src={product.image?.[0] || 'https://placehold.co/400x400?text=?'}
+                                    alt={product.name}
+                                    className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
+                                    onError={e => e.target.src = 'https://placehold.co/400x400?text=?'}
+                                />
+                                <div className="absolute top-3 right-3 shadow-sm rounded-full">
                                     {getStockBadge(product)}
                                 </div>
-                                <div className="flex items-center gap-3 mt-2">
-                                    <div className="flex items-center gap-1 text-yellow-500 text-xs font-bold">
-                                        ⭐ {avgRating(product)} ({product.ratings?.length || 0})
+                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-lg shadow-sm border border-gray-100 flex items-center gap-1.5">
+                                    <span className="text-yellow-500 text-xs font-black">⭐ {avgRating(product)}</span>
+                                    <span className="text-gray-400 text-[10px] font-bold">({product.ratings?.length || 0})</span>
+                                </div>
+                            </div>
+
+                            {/* Product Details */}
+                            <div className="p-5 flex-1 flex flex-col">
+                                <div className="flex justify-between items-start mb-2 gap-2">
+                                    <p className="font-bold text-gray-800 line-clamp-2 leading-snug">{product.name}</p>
+                                </div>
+                                <p className="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-md inline-block w-max mb-4 uppercase tracking-wider">{product.category}</p>
+
+                                <div className="mt-auto pt-4 border-t border-gray-100 flex items-end justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-gray-400 mb-0.5 uppercase tracking-wide">Selling Price</p>
+                                        <div className="flex items-baseline gap-2 mt-1">
+                                            <span className="text-xl font-black text-gray-900">₹{product.offerPrice}</span>
+                                            <span className="text-sm text-gray-400 line-through font-medium">₹{product.price}</span>
+                                        </div>
                                     </div>
+                                    {product.price && product.offerPrice && Number(product.price) > Number(product.offerPrice) && (
+                                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1.5 rounded-md border border-emerald-100">
+                                            {Math.round(((product.price - product.offerPrice) / product.price) * 100)}% OFF
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="flex gap-2 mt-3">
-                                    <button onClick={() => setSelectedProduct(product)}
-                                        className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-100 transition">
-                                        💬 Reviews ({product.ratings?.length || 0})
-                                    </button>
-                                    <button onClick={() => deleteProduct(product._id, product.name)}
-                                        disabled={deletingId === product._id}
-                                        className="text-xs px-3 py-1.5 bg-red-50 text-red-500 rounded-lg font-semibold hover:bg-red-100 transition disabled:opacity-50">
-                                        {deletingId === product._id ? '...' : '🗑️ Delete'}
-                                    </button>
-                                </div>
+                            </div>
+
+                            {/* Action Buttons Footer */}
+                            <div className="p-2 bg-gray-50/50 border-t border-gray-100 grid grid-cols-3 gap-2">
+                                <button onClick={() => setSelectedProduct(product)}
+                                    className="flex flex-col items-center justify-center p-2.5 rounded-xl text-gray-500 hover:bg-white hover:text-indigo-600 hover:shadow-sm border border-transparent hover:border-gray-100 transition-all group/btn">
+                                    <span className="text-lg mb-1 group-hover/btn:scale-110 transition-transform">💬</span>
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wide">Reviews</span>
+                                </button>
+                                <button onClick={() => navigate(`/vendor/edit-product/${product._id}`)}
+                                    className="flex flex-col items-center justify-center p-2.5 rounded-xl text-gray-500 hover:bg-white hover:text-blue-600 hover:shadow-sm border border-transparent hover:border-gray-100 transition-all group/btn">
+                                    <span className="text-lg mb-1 group-hover/btn:scale-110 transition-transform">✏️</span>
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wide">Edit</span>
+                                </button>
+                                <button onClick={() => deleteProduct(product._id, product.name)} disabled={deletingId === product._id}
+                                    className="flex flex-col items-center justify-center p-2.5 rounded-xl text-gray-500 hover:bg-white hover:text-red-500 hover:shadow-sm border border-transparent hover:border-gray-100 transition-all group/btn disabled:opacity-50 disabled:hover:shadow-none disabled:hover:bg-transparent disabled:hover:border-transparent">
+                                    <span className="text-lg mb-1 group-hover/btn:scale-110 transition-transform">{deletingId === product._id ? '⏳' : '🗑️'}</span>
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wide">Delete</span>
+                                </button>
                             </div>
                         </div>
                     ))}

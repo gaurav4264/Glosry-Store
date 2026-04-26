@@ -22,8 +22,6 @@ import budgetRouter from './routes/budgetRoute.js';
 import userPantryRouter from './routes/userPantryRoute.js';
 import contactRouter from './routes/contactRoute.js';
 import couponRouter from './routes/couponRoute.js';
-// Notify Router for stock alerts
-// Notify Router for stock alerts
 import notifyRouter from './routes/notifyRoute.js';
 import complaintRouter from './routes/complaintRoute.js';
 import healthProfileRouter from './routes/healthProfileRoute.js';
@@ -31,6 +29,7 @@ import chatRouter from './routes/chatRoute.js';
 import sellerApplicationRouter from './routes/sellerApplicationRoute.js';
 import adminSellerRouter from './routes/adminSellerRoute.js';
 import scanRouter from './routes/scanRoute.js';
+import ecoRouteRouter from './routes/ecoRouteRoute.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -41,24 +40,15 @@ try {
 } catch (error) {
     console.error("Startup Error:", error)
 }
-
-// Allow multiple origins
 const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174']
-
-// Helper function to check allowed origin
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        // Allow all origins for now to fix deployment issues
-        // In production, you might want to restrict this to specific domains
         return callback(null, true);
     },
     credentials: true
 }
-
-// Middleware configuration
 app.use(cors(corsOptions));
 app.post('/stripe', express.raw({ type: 'application/json' }), stripeWebhooks)
 
@@ -90,6 +80,7 @@ app.use('/api/chat', chatRouter);
 app.use('/api/seller-application', sellerApplicationRouter);
 app.use('/api/admin', adminSellerRouter);
 app.use('/api/scan', scanRouter);
+app.use('/api/eco-route', ecoRouteRouter);
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`)

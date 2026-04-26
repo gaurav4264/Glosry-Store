@@ -1,5 +1,6 @@
 import SellerApplication from '../models/SellerApplication.js';
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 
 // Get All Applications : GET /api/admin/sellers
 export const getAllApplications = async (req, res) => {

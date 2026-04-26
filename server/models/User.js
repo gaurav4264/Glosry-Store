@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
     profilePhoto: { type: String, default: '' },
     cartItems: { type: Object, default: {} },
     loyaltyPoints: { type: Number, default: 0 },
+    spinPoints: { type: Number, default: 0 },
+    lastSpinDate: { type: Date, default: null },
     totalSpent: { type: Number, default: 0 },
     membershipTier: { type: String, enum: ['Bronze', 'Silver', 'Gold'], default: 'Bronze' },
     defaultAddress: { type: mongoose.Schema.Types.ObjectId, ref: 'address', default: null },

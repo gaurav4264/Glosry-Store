@@ -45,6 +45,79 @@ export const addProduct = async (req, res) => {
 }
 
 
+// Update Product : /api/product/update
+export const updateProduct = async (req, res) => {
+    try {
+        let productData;
+        try {
+            productData = JSON.parse(req.body.productData);
+        } catch (error) {
+            return res.json({ success: false, message: "Invalid product data format" });
+        }
+
+        const { id, name, description, category, price, offerPrice, stockQuantity, shopId, manufacturingDate, expiryDate, existingImages } = productData;
+
+        const product = await Product.findById(id);
+        if (!product) {
+            return res.json({ success: false, message: "Product not found" });
+        }
+
+        let finalImages = [...(existingImages || [])];
+
+        if (req.files && req.files.length > 0) {
+            for (let i = 0; i < req.files.length; i++) {
+                const file = req.files[i];
+                let result = await cloudinary.uploader.upload(file.path, { resource_type: 'image' });
+                const uploadedUrl = result.secure_url;
+
+                const emptyIndex = finalImages.findIndex(img => !img);
+                if (emptyIndex !== -1) {
+                    finalImages[emptyIndex] = uploadedUrl;
+                } else {
+                    finalImages.push(uploadedUrl);
+                }
+            }
+        }
+
+        finalImages = finalImages.filter(img => img);
+
+        if (finalImages.length === 0) {
+            return res.json({ success: false, message: "Product must have at least one image" });
+        }
+
+        product.name = name;
+        product.description = description;
+        product.category = category;
+        product.price = price;
+        product.offerPrice = offerPrice;
+        product.stockQuantity = stockQuantity;
+        product.inStock = stockQuantity > 0;
+        product.manufacturingDate = manufacturingDate;
+        product.expiryDate = expiryDate;
+        product.image = finalImages;
+
+        // If admin assigns it to a shop
+        if (shopId) {
+            const vendor = await SellerApplication.findById(shopId).select('shopName');
+            if (vendor) {
+                product.vendorId = shopId;
+                product.vendorShopName = vendor.shopName;
+            }
+        } else {
+            product.vendorId = null;
+            product.vendorShopName = null;
+        }
+
+        await product.save();
+        res.json({ success: true, message: "Product Updated Successfully!" });
+
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message });
+    }
+}
+
+
 // Get Product : /api/product/list
 export const productList = async (req, res) => {
     try {
@@ -157,13 +230,16 @@ export const addProductRating = async (req, res) => {
         const existingRatingIndex = product.ratings.findIndex(r => r.userId === userId);
 
         if (existingRatingIndex > -1) {
-            product.ratings[existingRatingIndex] = userRating;
+            product.ratings[existingRatingIndex].rating = Number(rating);
+            product.ratings[existingRatingIndex].comment = comment;
+            product.ratings[existingRatingIndex].createdAt = new Date();
+            product.markModified('ratings');
         } else {
             product.ratings.push(userRating);
         }
 
         await product.save();
-        res.json({ success: true, message: 'Rating Added' })
+        res.json({ success: true, message: existingRatingIndex > -1 ? 'Rating Updated' : 'Rating Added' })
 
     } catch (error) {
         console.log(error.message);

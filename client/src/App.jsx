@@ -32,12 +32,14 @@ import RefundPolicy from './pages/RefundPolicy';
 import UserComplaint from './pages/UserComplaint';
 import HealthProfile from './pages/HealthProfile';
 import ScanList from './pages/ScanList';
+import BarcodeScan from './pages/BarcodeScan';
 
 // Seller Pages
 // Seller Pages (Lazy Loaded)
 const SellerLayout = React.lazy(() => import('./pages/seller/SellerLayout'));
 const AddProduct = React.lazy(() => import('./pages/seller/AddProduct'));
 const ProductList = React.lazy(() => import('./pages/seller/ProductList'));
+const EditProduct = React.lazy(() => import('./pages/seller/EditProduct'));
 const Orders = React.lazy(() => import('./pages/seller/Orders'));
 const Analytics = React.lazy(() => import('./pages/seller/Analytics'));
 const InventoryAlerts = React.lazy(() => import('./pages/seller/InventoryAlerts'));
@@ -54,6 +56,7 @@ const AdminVendors = React.lazy(() => import('./pages/seller/AdminVendors'));
 const VendorLayout = React.lazy(() => import('./pages/vendor/VendorLayout'));
 const VendorDashboard = React.lazy(() => import('./pages/vendor/VendorDashboard'));
 const VendorAddProduct = React.lazy(() => import('./pages/vendor/VendorAddProduct'));
+const VendorEditProduct = React.lazy(() => import('./pages/vendor/VendorEditProduct'));
 const VendorProducts = React.lazy(() => import('./pages/vendor/VendorProducts'));
 const VendorOrders = React.lazy(() => import('./pages/vendor/VendorOrders'));
 const VendorProfile = React.lazy(() => import('./pages/vendor/VendorProfile'));
@@ -103,6 +106,7 @@ const App = () => {
           <Route path='/smart-pantry' element={<SmartPantry />} />
           <Route path='/budget-bag' element={<BudgetBag />} />
           <Route path='/smart-list' element={<ScanList />} />
+          <Route path='/barcode-scan' element={<BarcodeScan />} />
           <Route path='/checkout' element={<Checkout />} />
           <Route path='/profile' element={<UserProfile />} />
           <Route path='/privacy' element={<PrivacyPolicy />} />
@@ -114,6 +118,7 @@ const App = () => {
           <Route path='/seller' element={isSeller ? <React.Suspense fallback={<Loading />}><SellerLayout /></React.Suspense> : <SellerLogin />}>
             <Route index element={isSeller ? <React.Suspense fallback={<Loading />}><AddProduct /></React.Suspense> : null} />
             <Route path='product-list' element={<React.Suspense fallback={<Loading />}><ProductList /></React.Suspense>} />
+            <Route path='edit-product/:id' element={<React.Suspense fallback={<Loading />}><EditProduct /></React.Suspense>} />
             <Route path='orders' element={<React.Suspense fallback={<Loading />}><Orders /></React.Suspense>} />
             <Route path='complaints' element={<React.Suspense fallback={<Loading />}><SellerComplaints /></React.Suspense>} />
             <Route path='analytics' element={<React.Suspense fallback={<Loading />}><Analytics /></React.Suspense>} />
@@ -135,6 +140,7 @@ const App = () => {
           <Route path='/vendor' element={<React.Suspense fallback={<Loading />}><VendorLayout /></React.Suspense>}>
             <Route index element={<React.Suspense fallback={<Loading />}><VendorDashboard /></React.Suspense>} />
             <Route path='add-product' element={<React.Suspense fallback={<Loading />}><VendorAddProduct /></React.Suspense>} />
+            <Route path='edit-product/:id' element={<React.Suspense fallback={<Loading />}><VendorEditProduct /></React.Suspense>} />
             <Route path='products' element={<React.Suspense fallback={<Loading />}><VendorProducts /></React.Suspense>} />
             <Route path='orders' element={<React.Suspense fallback={<Loading />}><VendorOrders /></React.Suspense>} />
             <Route path='reviews' element={<React.Suspense fallback={<Loading />}><VendorProducts /></React.Suspense>} />

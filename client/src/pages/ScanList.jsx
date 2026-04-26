@@ -18,8 +18,10 @@ const ScanList = () => {
         if (file) {
             setImage(file);
             setPreview(URL.createObjectURL(file));
-            setResults(null); // reset results if new image chosen
+            setResults(null); // reset results on new image
         }
+        // Reset input so same file can be re-selected
+        e.target.value = '';
     };
 
     const handleScan = async () => {
@@ -193,24 +195,45 @@ const ScanList = () => {
                     ) : (
                         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                             {results.map((item, index) => (
-                                <div key={index} className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:border-primary/30 transition-colors bg-gray-50/50 group">
+                                <div key={index} className={`flex items-center justify-between p-4 rounded-2xl border transition-colors group ${
+                                    item.matchedProduct
+                                        ? 'border-gray-100 hover:border-primary/30 bg-gray-50/50'
+                                        : 'border-red-100 bg-red-50/40'
+                                }`}>
 
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
+                                        {/* Product Image */}
+                                        <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-gray-100 flex-shrink-0">
                                             {item.matchedProduct ? (
-                                                <img src={item.matchedProduct.image[0]} alt="" className="w-full h-full object-cover" />
+                                                <img
+                                                    src={item.matchedProduct.image[0]}
+                                                    alt={item.matchedProduct.name}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => { e.target.style.display='none'; e.target.parentNode.innerHTML='🛒'; }}
+                                                />
                                             ) : (
-                                                <span className="text-gray-300">❌</span>
+                                                <span className="text-2xl">❌</span>
                                             )}
                                         </div>
+
                                         <div>
-                                            <p className="font-bold text-gray-800 text-sm">
-                                                {item.matchedProduct ? item.matchedProduct.name : item.rawName}
+                                            {/* Detected label */}
+                                            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-0.5">
+                                                🤖 Detected: <span className="text-gray-500">{item.rawName}</span>
                                             </p>
+                                            {/* Store match */}
                                             {item.matchedProduct ? (
-                                                <p className="text-xs text-primary font-bold mt-0.5">₹{item.matchedProduct.offerPrice}</p>
+                                                <>
+                                                    <p className="font-bold text-gray-800 text-sm leading-tight">
+                                                        {item.matchedProduct.name}
+                                                    </p>
+                                                    <p className="text-xs text-primary font-bold mt-0.5">₹{item.matchedProduct.offerPrice}</p>
+                                                </>
                                             ) : (
-                                                <p className="text-xs text-red-500 font-medium mt-0.5">Not found in catalog</p>
+                                                <>
+                                                    <p className="font-bold text-gray-500 text-sm leading-tight">{item.rawName}</p>
+                                                    <p className="text-xs text-red-400 font-medium mt-0.5">Not found in store</p>
+                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -219,7 +242,7 @@ const ScanList = () => {
                                         <button
                                             onClick={() => handleAddToCart(item.matchedProduct._id)}
                                             disabled={addingToCart === item.matchedProduct._id}
-                                            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-200 text-gray-500 hover:text-primary hover:border-primary transition-colors disabled:opacity-50"
+                                            className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-200 text-gray-500 hover:text-primary hover:border-primary transition-colors disabled:opacity-50 flex-shrink-0"
                                         >
                                             {addingToCart === item.matchedProduct._id ? (
                                                 <span className="animate-spin aspect-square border-2 border-primary border-t-transparent rounded-full w-4 h-4"></span>

@@ -5,19 +5,19 @@ import User from "../models/User.js"
 import Coupon from "../models/Coupon.js"
 import { v2 as cloudinary } from 'cloudinary'
 
-// Helper: Calculate membership tier
+
 const calculateTier = (totalSpent) => {
     if (totalSpent >= 10000) return 'Gold';
     if (totalSpent >= 5000) return 'Silver';
     return 'Bronze';
 };
 
-// Helper: Award loyalty points to user
+
 const awardLoyaltyPoints = async (userId, orderAmount) => {
     try {
         const user = await User.findById(userId);
         if (!user) return;
-        const pointsEarned = Math.floor(orderAmount / 10); // 1 point per ₹10
+        const pointsEarned = Math.floor(orderAmount / 10); 
         user.loyaltyPoints += pointsEarned;
         user.totalSpent += orderAmount;
         user.membershipTier = calculateTier(user.totalSpent);
@@ -27,7 +27,7 @@ const awardLoyaltyPoints = async (userId, orderAmount) => {
     }
 };
 
-// Helper: Decrement stock for ordered items, auto mark Out of Stock when qty hits 0
+
 const decrementStock = async (items) => {
     try {
         for (const item of items) {

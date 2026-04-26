@@ -23,6 +23,10 @@ const Checkout = () => {
     const [couponCode, setCouponCode] = useState("")
     const [discount, setDiscount] = useState(0)
     const [isApplying, setIsApplying] = useState(false)
+    const [spinPoints, setSpinPoints] = useState(0)
+    const [spinDiscount, setSpinDiscount] = useState(0)
+    const [spinApplied, setSpinApplied] = useState(false)
+    const [spinApplying, setSpinApplying] = useState(false)
 
     const [cartArray, setCartArray] = useState([])
 
@@ -52,8 +56,42 @@ const Checkout = () => {
     }
 
     useEffect(() => {
-        if (user) fetchAddresses()
+        if (user) {
+            fetchAddresses()
+            fetchSpinPoints()
+        }
     }, [user])
+
+    const fetchSpinPoints = async () => {
+        try {
+            const { data } = await axios.post('/api/loyalty/points')
+            if (data.success) setSpinPoints(data.spinPoints || 0)
+        } catch (_) {}
+    }
+
+    const handleApplySpinPoints = async () => {
+        if (spinApplied) {
+            // Remove spin discount (don't refund points yet — only deduct on order)
+            setSpinDiscount(0)
+            setSpinApplied(false)
+            toast('Spin discount removed')
+            return
+        }
+        if (spinPoints < 200) return toast.error('Need 200 spin points to redeem')
+        setSpinApplying(true)
+        try {
+            const { data } = await axios.post('/api/loyalty/spin-redeem')
+            if (data.success) {
+                setSpinDiscount(40)
+                setSpinApplied(true)
+                setSpinPoints(data.remainingSpinPoints)
+                toast.success('🎁 ₹40 Spin discount applied!')
+            } else {
+                toast.error(data.message)
+            }
+        } catch (e) { toast.error(e.message) }
+        finally { setSpinApplying(false) }
+    }
 
     const handleApplyCoupon = async () => {
         if (!couponCode) return toast.error("Enter coupon code")
@@ -101,6 +139,7 @@ const Checkout = () => {
                 address: selectedAddress._id,
                 couponCode: discount > 0 ? couponCode.toUpperCase() : null,
                 couponDiscount: discount,
+                spinDiscount: spinDiscount,
                 scheduledDeliveryDate: deliveryDate,
                 deliveryTimeSlot: deliveryTime
             }
@@ -151,8 +190,8 @@ const Checkout = () => {
     }
 
     const subtotal = getCartAmount()
-    const tax = Math.floor((subtotal - discount) * 0.02)
-    const total = subtotal - discount + tax
+    const tax = Math.floor((subtotal - discount - spinDiscount) * 0.02)
+    const total = Math.max(0, subtotal - discount - spinDiscount + tax)
 
     return (
         <div className='mt-12 pb-20'>
@@ -353,6 +392,36 @@ const Checkout = () => {
                             {discount === 0 && <p className='text-xs text-gray-400 mt-1'>Available codes: <span className='font-mono font-bold text-gray-600 cursor-pointer hover:text-primary' onClick={() => setCouponCode('WELCOME20')}>WELCOME20</span> (20% off), <span className='font-mono font-bold text-gray-600 cursor-pointer hover:text-primary' onClick={() => setCouponCode('FLAT50')}>FLAT50</span> (Flat ₹50 off)</p>}
                         </div>
 
+                        {/* Spin Points Section */}
+                        {spinPoints >= 200 || spinApplied ? (
+                            <div className={`mb-6 rounded-xl border-2 p-4 transition-all ${spinApplied ? 'border-purple-400 bg-purple-50' : 'border-dashed border-purple-300 bg-purple-50/50'}`}>
+                                <div className='flex items-center justify-between'>
+                                    <div className='flex items-center gap-2'>
+                                        <span className='text-2xl'>🎰</span>
+                                        <div>
+                                            <p className='text-sm font-bold text-purple-800'>Spin Points Reward</p>
+                                            <p className='text-xs text-purple-600'>{spinApplied ? '200 pts used → ₹40 off applied!' : `You have ${spinPoints} pts → Get ₹40 off`}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleApplySpinPoints}
+                                        disabled={spinApplying}
+                                        className={`text-sm font-bold px-4 py-2 rounded-lg transition-all cursor-pointer ${
+                                            spinApplied
+                                                ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                                        }`}
+                                    >
+                                        {spinApplying ? '...' : spinApplied ? 'Remove' : 'Apply'}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : spinPoints > 0 ? (
+                            <div className='mb-6 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 text-center'>
+                                <p className='text-xs text-gray-500'>🎰 <strong>{spinPoints}</strong> spin pts · Need <strong>{200 - spinPoints}</strong> more for ₹40 off</p>
+                            </div>
+                        ) : null}
+
                         <div className='space-y-3 text-sm border-b border-gray-100 pb-4 mb-4'>
                             <div className='flex justify-between text-gray-600'>
                                 <span>Subtotal ({getCartCount()} items)</span>
@@ -362,6 +431,12 @@ const Checkout = () => {
                                 <div className='flex justify-between text-green-600 font-medium'>
                                     <span>Coupon Discount</span>
                                     <span>-{currency}{discount}</span>
+                                </div>
+                            )}
+                            {spinDiscount > 0 && (
+                                <div className='flex justify-between text-purple-600 font-medium'>
+                                    <span>🎰 Spin Points (200pts)</span>
+                                    <span>-{currency}{spinDiscount}</span>
                                 </div>
                             )}
                             <div className='flex justify-between text-gray-600'>

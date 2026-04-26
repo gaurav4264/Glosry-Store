@@ -74,6 +74,10 @@ const Navbar = () => {
               <span className='text-lg w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center'>📝</span>
               <div><p className='font-medium text-gray-800'>Scan List</p><p className='text-[11px] text-gray-400'>Upload handwritten lists</p></div>
             </div>
+            <div onClick={() => navigate('/barcode-scan')} className='px-4 py-2.5 hover:bg-green-50 cursor-pointer flex items-center gap-3 transition-colors duration-200'>
+              <span className='text-lg w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center'>📦</span>
+              <div><p className='font-medium text-gray-800'>Barcode Scan</p><p className='text-[11px] text-gray-400'>Scan product → add to cart</p></div>
+            </div>
             <div onClick={() => navigate('/complaint')} className='px-4 py-2.5 hover:bg-red-50 cursor-pointer flex items-center gap-3 transition-colors duration-200'>
               <span className='text-lg w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center'>📢</span>
               <div><p className='font-medium text-gray-800'>Raise Complaint</p><p className='text-[11px] text-gray-400'>We are here to help</p></div>
@@ -161,6 +165,7 @@ const Navbar = () => {
               <NavLink to="/budget-bag" onClick={() => setOpen(false)}>💰 Budget Bag</NavLink>
               <NavLink to="/health-profile" onClick={() => setOpen(false)}>🩺 Health Advisor</NavLink>
               <NavLink to="/smart-list" onClick={() => setOpen(false)}>📝 Scan Grocery List</NavLink>
+              <NavLink to="/barcode-scan" onClick={() => setOpen(false)}>📦 Barcode Scan</NavLink>
             </>
           }
           <NavLink to="/contact" onClick={() => setOpen(false)}>Contact</NavLink>

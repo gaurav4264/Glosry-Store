@@ -181,7 +181,22 @@ export const vendorLogin = async (req, res) => {
         if (application.status !== 'approved') return res.json({ success: false, message: 'Your application is not approved yet. Status: ' + application.status });
         if (!application.passwordSet) return res.json({ success: false, message: 'Please set your password first using your Seller ID.' });
 
-        const isMatch = await bcrypt.compare(password, application.password);
+        // Try bcrypt compare (new accounts with hashed passwords)
+        let isMatch = false;
+        try {
+            isMatch = await bcrypt.compare(password, application.password);
+        } catch (_) {
+            isMatch = false;
+        }
+
+        // Fallback: plaintext compare for old accounts (password was saved before hashing was set up)
+        if (!isMatch && application.password === password) {
+            isMatch = true;
+            // Auto-migrate: hash and save the password so next login uses bcrypt
+            const hashed = await bcrypt.hash(password, 10);
+            await SellerApplication.findByIdAndUpdate(application._id, { password: hashed });
+        }
+
         if (!isMatch) return res.json({ success: false, message: 'Invalid password.' });
 
         const token = jwt.sign(
@@ -326,6 +341,83 @@ export const deleteVendorProduct = async (req, res) => {
         await Product.findByIdAndDelete(id);
         return res.json({ success: true, message: 'Product Deleted' });
     } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// POST /api/seller/vendor-update-product
+export const vendorUpdateProduct = async (req, res) => {
+    try {
+        const vendorId = req.vendorId?.toString();
+        let productData;
+        try {
+            productData = JSON.parse(req.body.productData);
+        } catch {
+            return res.json({ success: false, message: 'Invalid product data format' });
+        }
+
+        const { id, name, description, category, price, offerPrice, stockQuantity, manufacturingDate, expiryDate, existingImages } = productData;
+
+        const inStock = stockQuantity > 0;
+
+        // Verify product belongs to vendor
+        const product = await Product.findOne({ _id: id, vendorId });
+        if (!product) {
+            return res.json({ success: false, message: 'Product not found or not yours to edit' });
+        }
+
+        // Handle Images
+        let finalImages = [...(existingImages || [])];
+
+        if (req.files && req.files.length > 0) {
+            const { v2: cloudinaryUpload } = await import('cloudinary');
+
+            // req.files is an array, but we don't know which index each file corresponds to directly
+            // That's why we passed `imageIndex_${index}` from the frontend
+
+            for (let i = 0; i < req.files.length; i++) {
+                const file = req.files[i];
+                // Find which index this file was meant for
+                // Our frontend appended files in order, and also appended imageIndex_X fields. 
+                // But multer just gives us an array of files. 
+                // A simpler approach since we just send new files: Put them where existingImages is empty
+
+                const result = await cloudinaryUpload.uploader.upload(file.path, { resource_type: 'image' });
+                const uploadedUrl = result.secure_url;
+
+                // Find first empty slot in finalImages or push to end
+                const emptyIndex = finalImages.findIndex(img => !img);
+                if (emptyIndex !== -1) {
+                    finalImages[emptyIndex] = uploadedUrl;
+                } else {
+                    finalImages.push(uploadedUrl);
+                }
+            }
+        }
+
+        // Filter out any empty strings from finalImages
+        finalImages = finalImages.filter(img => img);
+
+        if (finalImages.length === 0) {
+            return res.json({ success: false, message: 'Product must have at least one image' });
+        }
+
+        product.name = name;
+        product.description = description;
+        product.category = category;
+        product.price = price;
+        product.offerPrice = offerPrice;
+        product.stockQuantity = stockQuantity;
+        product.inStock = inStock;
+        product.manufacturingDate = manufacturingDate;
+        product.expiryDate = expiryDate;
+        product.image = finalImages;
+
+        await product.save();
+
+        return res.json({ success: true, message: 'Product Details Updated' });
+    } catch (error) {
+        console.error('vendorUpdateProduct error:', error);
         res.json({ success: false, message: error.message });
     }
 };

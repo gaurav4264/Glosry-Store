@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken';
 import SellerApplication from '../models/SellerApplication.js';
 
-// Allows BOTH admin (sellerToken) AND approved vendor (vendorToken) to access
+
 const authSellerOrVendor = async (req, res, next) => {
     try {
         const { sellerToken, vendorToken } = req.cookies;
 
-        // ── 1. Try Admin Token first ────────────────────────────────
+ 
         if (sellerToken) {
             const decoded = jwt.verify(sellerToken, process.env.JWT_SECRET);
             if (decoded.email === process.env.SELLER_EMAIL) {
@@ -15,7 +15,6 @@ const authSellerOrVendor = async (req, res, next) => {
             }
         }
 
-        // ── 2. Try Vendor Token ──────────────────────────────────────
         if (vendorToken) {
             const decoded = jwt.verify(vendorToken, process.env.JWT_SECRET);
             if (!decoded.isVendor) {
@@ -31,7 +30,6 @@ const authSellerOrVendor = async (req, res, next) => {
             return next();
         }
 
-        // ── 3. Neither token present ─────────────────────────────────
         return res.json({ success: false, message: 'Not Authorized - Please login' });
 
     } catch (error) {

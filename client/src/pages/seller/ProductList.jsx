@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
 
 const ProductList = () => {
+    const navigate = useNavigate();
     const { products, currency, axios: appAxios, fetchProducts } = useAppContext();
 
     // Vendor/Shop state
@@ -407,10 +409,16 @@ const ProductList = () => {
 
                                             {/* Actions */}
                                             <td className="px-4 py-3">
-                                                <button onClick={() => deleteProduct(product._id, product.name)}
-                                                    className="px-3 py-1.5 bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 hover:text-red-700 rounded-xl text-xs font-bold transition-all">
-                                                    🗑️ Delete
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => navigate(`/seller/edit-product/${product._id}`)}
+                                                        className="px-3 py-1.5 bg-blue-50 text-blue-500 border border-blue-200 hover:bg-blue-100 hover:text-blue-700 rounded-xl text-xs font-bold transition-all">
+                                                        ✏️ Edit
+                                                    </button>
+                                                    <button onClick={() => deleteProduct(product._id, product.name)}
+                                                        className="px-3 py-1.5 bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 hover:text-red-700 rounded-xl text-xs font-bold transition-all">
+                                                        🗑️ Delete
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );

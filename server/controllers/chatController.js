@@ -44,7 +44,7 @@ RULES:
 - Stay positive and friendly always`;
 
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey || apiKey === 'your_key_here' || apiKey === '') {
+        if (!apiKey || apiKey === 'your_key_here' || apiKey === '' || apiKey.includes('gemini_api_key_here')) {
             return res.json({ success: true, reply: getSmartFallback(message, language) });
         }
 

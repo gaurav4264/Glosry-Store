@@ -4,12 +4,12 @@ import LeafletMap from '../components/LeafletMap';
 import { assets } from '../assets/assets';
 
 const TrackOrder = () => {
-    const [center, setCenter] = useState([25.5941, 85.1376]); // Default center (Patna)
+    const [center, setCenter] = useState([25.5941, 85.1376]); 
     const [deliveryBoyLocation, setDeliveryBoyLocation] = useState([25.5941, 85.1376]);
     const [markers, setMarkers] = useState([]);
 
     useEffect(() => {
-        // Simulate Delivery Boy Movement
+       
         const interval = setInterval(() => {
             setDeliveryBoyLocation(prev => [
                 prev[0] + (Math.random() - 0.5) * 0.001,
@@ -24,7 +24,7 @@ const TrackOrder = () => {
         setMarkers([
             { position: [25.5941, 85.1376], popup: "Shop Location" },
             { position: deliveryBoyLocation, popup: "Delivery Boy (Live)" },
-            // Ideally we'd pull the user's address location here
+      
         ]);
         setCenter(deliveryBoyLocation);
     }, [deliveryBoyLocation]);

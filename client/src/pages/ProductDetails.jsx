@@ -221,10 +221,10 @@ const ProductDetails = () => {
                         </div>
                     </div>
 
-                    {/* Rating Section - show if user hasn't reviewed OR is editing */}
-                    {(!userReview || isEditing) && (
+                    {/* Rating Section - show if user hasn't reviewed */}
+                    {!userReview && (
                         <div className="mt-10">
-                            <h3 className="font-medium text-lg">{isEditing ? '✏️ Edit your review' : 'Rate this product'}</h3>
+                            <h3 className="font-medium text-lg">Rate this product</h3>
                             <div className="flex gap-2 mt-2">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <img
